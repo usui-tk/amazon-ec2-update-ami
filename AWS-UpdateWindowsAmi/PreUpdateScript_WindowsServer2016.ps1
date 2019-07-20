@@ -385,9 +385,40 @@ Start-Sleep -Seconds 15
 Get-Service -Name "AWSAgent"
 
 # Exec-12
+Write-LogSeparator "Package Install Modern Web Browser (Google Chrome 64bit Edition)"
+Set-Variable -Name CHROME_INSTALLER_URL -Scope Script -Value "https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise64.msi"
+Set-Variable -Name CHROME_INSTALLER_FILE -Scope Script -Value "googlechrome.msi"
+Get-WebContentToFile -Uri "$CHROME_INSTALLER_URL" -OutFile "$TOOL_DIR\$CHROME_INSTALLER_FILE"
+Start-Process "msiexec.exe" -Verb runas -Wait -ArgumentList @("/i $TOOL_DIR\$CHROME_INSTALLER_FILE", "/quiet", "/norestart", "/L*v $LOGS_DIR\APPS_ChromeSetup.log")
+Start-Sleep -Seconds 5
+
+# Exec-13
+Write-LogSeparator "# Package Install File archiver (7-Zip)"
+Set-Variable -Name 7ZIP_INSTALLER_URL -Scope Script -Value "https://www.7-zip.org/a/7z1900-x64.exe"
+Set-Variable -Name 7ZIP_INSTALLER_FILE -Scope Script -Value "7z1900-x64.exe"
+Get-WebContentToFile -Uri "$7ZIP_INSTALLER_URL" -OutFile "$TOOL_DIR\$7ZIP_INSTALLER_FILE"
+Start-Process -FilePath "$TOOL_DIR\$7ZIP_INSTALLER_FILE" -Verb runas -Wait -ArgumentList @("/S") | Out-Null
+Start-Sleep -Seconds 5
+
+# Exec-14
+Write-LogSeparator "# Package Install Graphic Viewer (IrfanView)"
+Set-Variable -Name IRFANVIEW_INSTALLER_URL -Scope Script -Value "https://dforest.watch.impress.co.jp/library/i/irfanview/11557/iview453_x64_setup.exe"
+Set-Variable -Name IRFANVIEW_INSTALLER_FILE -Scope Script -Value "iview453_x64_setup.exe"
+Set-Variable -Name IRFANVIEW_PLUGIN_INSTALLER_URL -Scope Script -Value "https://dforest.watch.impress.co.jp/library/i/irfanview/11592/iview453_plugins_x64_setup.exe"
+Set-Variable -Name IRFANVIEW_PLUGIN_INSTALLER_FILE -Scope Script -Value "iview453_plugins_x64_setup.exe"
+Get-WebContentToFile -Uri "$IRFANVIEW_INSTALLER_URL" -OutFile "$TOOL_DIR\$IRFANVIEW_INSTALLER_FILE"
+Get-WebContentToFile -Uri "$IRFANVIEW_PLUGIN_INSTALLER_URL" -OutFile "$TOOL_DIR\$IRFANVIEW_PLUGIN_INSTALLER_FILE"
+Start-Process -FilePath "$TOOL_DIR\$IRFANVIEW_INSTALLER_FILE" -Verb runas -Wait -ArgumentList @("/silent", "/desktop=1", "/thumbs=0", "/group=1", "/allusers=1", "/assoc=1", "/allusers=1", "/ini=%APPDATA%\IrfanView") | Out-Null
+Start-Sleep -Seconds 5
+Start-Process -FilePath "$TOOL_DIR\$IRFANVIEW_PLUGIN_INSTALLER_FILE" -Verb runas -Wait -ArgumentList @("/silent") | Out-Null
+Start-Sleep -Seconds 5
+
+# Exec-15
 Write-LogSeparator "Package Install System Utility (Visual Studio Code)"
-Get-WebContentToFile -Uri 'https://go.microsoft.com/fwlink/?linkid=852157' -OutFile "$TOOL_DIR\VSCodeSetup-x64.exe"
-Start-Process -FilePath "$TOOL_DIR\VSCodeSetup-x64.exe" -Verb runas -Wait -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/mergetasks=!runCode, desktopicon, quicklaunchicon, addcontextmenufiles, addcontextmenufolders, addtopath", "/LOG=C:\EC2-Bootstrap\Logs\APPS_VSCodeSetup.log") | Out-Null
+Set-Variable -Name VSCODE_INSTALLER_URL -Scope Script -Value "https://go.microsoft.com/fwlink/?linkid=852157"
+Set-Variable -Name VSCODE_INSTALLER_FILE -Scope Script -Value "VSCodeSetup-x64.exe"
+Get-WebContentToFile -Uri "$VSCODE_INSTALLER_URL" -OutFile "$TOOL_DIR\$VSCODE_INSTALLER_FILE"
+Start-Process -FilePath "$TOOL_DIR\$VSCODE_INSTALLER_FILE" -Verb runas -Wait -ArgumentList @("/verysilent", "/suppressmsgboxes", "/mergetasks=!runCode, desktopicon, quicklaunchicon, addcontextmenufiles, addcontextmenufolders, addtopath", "/LOG=C:\EC2-Bootstrap\Logs\APPS_VSCodeSetup.log") | Out-Null
 
 # Exec-Last
 Write-LogSeparator "Collect Script/Config Files & Logging Data Files"
