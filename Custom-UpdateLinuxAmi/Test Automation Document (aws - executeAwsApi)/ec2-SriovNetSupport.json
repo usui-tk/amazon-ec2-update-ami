@@ -1,0 +1,73 @@
+{
+    "schemaVersion": "0.3",
+    "description": "Test aws:executeAwsApi",
+    "assumeRole": "{{AutomationAssumeRole}}",
+    "parameters": {
+        "AutomationAssumeRole": {
+            "type": "String",
+            "description": "(Required) The ARN of the role that allows Automation to perform the actions on your behalf.",
+            "default": "arn:aws:iam::{{global:ACCOUNT_ID}}:role/AutomationServiceRole"
+        },
+        "InstanceId": {
+            "type": "String",
+            "description": "test",
+            "default": ""
+        }
+    },
+    "mainSteps": [
+        {
+            "name": "Check1",
+            "action": "aws:executeAwsApi",
+            "maxAttempts": 3,
+            "onFailure": "Abort",
+            "timeoutSeconds": 1800,
+            "inputs": {
+                "Service": "ec2",
+                "Api": "DescribeInstanceAttribute",
+                "Attribute": "sriovNetSupport",
+                "InstanceId": "{{ InstanceId }}"
+            },
+            "outputs": [
+                {
+                    "Name": "StatusForSriovNetSupport",
+                    "Selector": "$.SriovNetSupport.Value",
+                    "Type": "String"
+                }
+            ]
+        },
+        {
+            "name": "Change",
+            "action": "aws:executeAwsApi",
+            "maxAttempts": 3,
+            "onFailure": "Abort",
+            "timeoutSeconds": 1800,
+            "inputs": {
+                "Service": "ec2",
+                "Api": "ModifyInstanceAttribute",
+                "Attribute": "sriovNetSupport",
+                "Value": "simple",
+                "InstanceId": "{{ InstanceId }}"
+            }
+        },
+        {
+            "name": "Check2",
+            "action": "aws:executeAwsApi",
+            "maxAttempts": 3,
+            "onFailure": "Abort",
+            "timeoutSeconds": 1800,
+            "inputs": {
+                "Service": "ec2",
+                "Api": "DescribeInstanceAttribute",
+                "Attribute": "sriovNetSupport",
+                "InstanceId": "{{ InstanceId }}"
+            },
+            "outputs": [
+                {
+                    "Name": "StatusForSriovNetSupport",
+                    "Selector": "$.SriovNetSupport.Value",
+                    "Type": "String"
+                }
+            ]
+        }
+    ]
+}
