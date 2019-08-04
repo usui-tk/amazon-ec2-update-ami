@@ -1,0 +1,155 @@
+#!/bin/bash
+
+# The region in which this script is running, used to construct an URL
+# to the SSM Agent repository in S3.
+REGION="us-east-1"
+
+function usage() {
+    echo "$0 --region <REGION>"
+    echo "Install SSM Agent on this Linux instance."
+
+    exit "$1"
+}
+
+function die() {
+    echo "$@, exiting." >&2
+    exit 1
+}
+
+function get_contents() {
+    if [ -x "$(which curl)" ]; then
+        curl -s -f "$1"
+    elif [ -x "$(which wget)" ]; then
+        wget "$1" -O -
+    else
+        die "No download utility (curl, wget)"
+    fi
+}
+
+function issue_match() {
+    grep -E -i -c "$1" /etc/issue 2>&1 &>/dev/null
+    [ $? -eq 0 ] && echo "true" || echo "false"
+}
+
+function is_debuntu() {
+    echo "$(issue_match 'Debian|Ubuntu')"
+}
+
+function is_ubuntu() {
+    echo "$(issue_match 'Ubuntu')"
+}
+
+function is_redhat() {
+    if [ -f "/etc/system-release" ] ||
+        [ -f "/etc/redhat-release" ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+function get_ubuntu_major() {
+    lsb_release --release | cut -f 2 | cut -d '.' -f 1
+}
+
+function get_arch() {
+    if [ "$(uname -m)" == "x86_64" ]; then
+        echo "amd64"
+    elif [[ "$(uname -m)" =~ i[3-6]86 ]]; then
+        echo "386"
+    else
+        die "Unsupported architecture $(uname -m)"
+    fi
+}
+
+function get_package_type() {
+    if [ "$(is_debuntu)" == "true" ]; then
+        echo "deb"
+    elif [ "$(is_redhat)" == "true" ]; then
+        echo "rpm"
+    fi
+}
+
+function get_dist() {
+    if [ "$(is_debuntu)" == "true" ]; then
+        echo "debian"
+    elif [ "$(is_redhat)" == "true" ]; then
+        echo "linux"
+    else
+        die "Unknown distribution"
+    fi
+}
+
+function get_ssm_agent() {
+    extension="$(get_package_type)"
+    dist="$(get_dist)"
+    arch="$(get_arch)"
+
+    package="amazon-ssm-agent.$extension"
+    url_base="https://amazon-ssm-$REGION.s3.amazonaws.com"
+    url="${url_base}/latest/${dist}_${arch}/${package}"
+
+    get_contents "$url" > "$package"
+
+    if [ ! -f "$package" ]; then
+        die "Could not download the package from $url"
+    fi
+}
+
+function start_ssm_agent() {
+    if [ "$(is_ubuntu)" == "false" ]; then
+        return
+    fi
+
+    case "$(get_ubuntu_major)" in
+        16)
+            systemctl start amazon-ssm-agent
+            ;;
+        14)
+            start amazon-ssm-agent
+            ;;
+        *)
+            die "Unknown major revision $(get_ubuntu_major)"
+    esac
+}
+
+function install_ssm_agent() {
+    if [ "$(is_debuntu)" == "true" ]; then
+        dpkg -i amazon-ssm-agent.deb
+    elif [ "$(is_redhat)" == "true" ]; then
+        yum install --nogpgcheck -y amazon-ssm-agent.rpm
+    else
+        die "Unknown distribution"
+    fi
+
+    if [ ! -x "$(which amazon-ssm-agent)" ]; then
+        die "No SSM agent was installed"
+    fi
+}
+
+function main() {
+    [ $# -ne 2 ] && usage 1
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --region)
+                REGION="$2"
+            ;;
+            *)
+                echo "Invalid arguments: $@" >&2
+                usage 1 
+            ;;
+        esac
+
+        shift
+        shift
+    done
+
+    cd /tmp
+    get_ssm_agent
+    install_ssm_agent
+    start_ssm_agent
+}
+
+main $@ 2>&1 | tee /tmp/aws-install-ssm-agent.log
+
