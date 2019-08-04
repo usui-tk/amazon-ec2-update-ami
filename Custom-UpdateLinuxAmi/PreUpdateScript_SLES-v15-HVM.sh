@@ -141,20 +141,6 @@ if [ $(command -v jq) ]; then
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
-if [ -n "$RoleName" ]; then
-	StsCredential=$(curl -s "http://169.254.169.254/latest/meta-data/iam/security-credentials/$RoleName")
-	if [ $(command -v jq) ]; then
-		StsAccessKeyId=$(echo $StsCredential | jq -r '.AccessKeyId')
-		StsSecretAccessKey=$(echo $StsCredential | jq -r '.SecretAccessKey')
-		StsToken=$(echo $StsCredential | jq -r '.Token')
-	fi
-fi
-
-# AWS Account ID
-if [ $(command -v jq) ]; then
-    AwsAccountId=$(curl -s "http://169.254.169.254/latest/dynamic/instance-identity/document" | jq -r '.accountId')
-fi
-
 #-------------------------------------------------------------------------------
 # Custom Package Installation [AWS-CLI]
 #-------------------------------------------------------------------------------
@@ -176,14 +162,6 @@ aws configure set cli_history enabled
 # Getting AWS-CLI default Region & Output format
 aws configure list
 cat ~/.aws/config
-
-# Get AWS Region Information
-if [ -n "$RoleName" ]; then
-	if [ -n "$Region" ]; then
-		echo "# Get AWS Region Infomation"
-		aws ec2 describe-regions --region ${Region}
-	fi
-fi
 
 #-------------------------------------------------------------------------------
 # Custom Package Installation [AWS Systems Manager agent (aka SSM agent)]
