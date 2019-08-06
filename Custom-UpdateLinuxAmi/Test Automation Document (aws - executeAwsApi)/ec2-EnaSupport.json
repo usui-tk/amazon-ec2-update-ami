@@ -30,7 +30,7 @@
 			},
 			"outputs": [
 				{
-					"Name": "EnaSupport",
+					"Name": "StatusForEnaSupport",
 					"Selector": "$.Reservations[0].Instances[0].EnaSupport",
 					"Type": "Boolean"
 				}
@@ -65,7 +65,7 @@
 			},
 			"outputs": [
 				{
-					"Name": "EnaSupport",
+					"Name": "StatusForEnaSupport",
 					"Selector": "$.Reservations[0].Instances[0].EnaSupport",
 					"Type": "Boolean"
 				}
