@@ -1,0 +1,80 @@
+{
+	"schemaVersion": "0.3",
+	"description": "Test aws:executeAwsApi",
+	"assumeRole": "{{AutomationAssumeRole}}",
+	"parameters": {
+		"AutomationAssumeRole": {
+			"type": "String",
+			"description": "(Required) The ARN of the role that allows Automation to perform the actions on your behalf.",
+			"default": "arn:aws:iam::{{global:ACCOUNT_ID}}:role/AutomationServiceRole"
+		},
+		"InstanceId": {
+			"type": "String",
+			"description": "test",
+			"default": ""
+		},
+		"InstanceType": {
+			"type": "String",
+			"description": "test",
+			"default": "c5n.xlarge"
+		}
+	},
+	"mainSteps": [
+		{
+			"name": "Check1",
+			"action": "aws:executeAwsApi",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1800,
+			"inputs": {
+				"Service": "ec2",
+				"Api": "DescribeInstances",
+                "InstanceIds": [
+                    "{{ InstanceId }}"
+                  ]
+			},
+			"outputs": [
+				{
+					"Name": "InstanceType",
+					"Selector": "$.Reservations[0].Instances[0].InstanceType",
+					"Type": "String"
+				}
+			]
+		},
+		{
+			"name": "Change",
+			"action": "aws:executeAwsApi",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1800,
+			"inputs": {
+				"Service": "ec2",
+				"Api": "ModifyInstanceAttribute",
+				"Attribute": "instanceType",
+				"Value": "{{ InstanceType }}",
+				"InstanceId": "{{ InstanceId }}"
+			}
+		},
+		{
+			"name": "Check2",
+			"action": "aws:executeAwsApi",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1800,
+			"inputs": {
+				"Service": "ec2",
+				"Api": "DescribeInstances",
+                "InstanceIds": [
+                    "{{ InstanceId }}"
+                  ]
+			},
+			"outputs": [
+				{
+					"Name": "InstanceType",
+					"Selector": "$.Reservations[0].Instances[0].InstanceType",
+					"Type": "String"
+				}
+			]
+		}
+	]
+}
