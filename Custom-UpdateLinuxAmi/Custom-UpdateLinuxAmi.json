@@ -60,13 +60,104 @@
         "SubnetId": "{{ SubnetId }}"
       }
     },
-    {
-      "name": "WaitForUserdataExecution",
-      "action": "aws:sleep",
-      "inputs": {
-        "Duration": "PT5M"
-      }
-    },
+		{
+			"name": "AssertInstanceIsManagedInstance",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
+			}
+		},
+		{
+			"name": "DescribeManagedInstanceForInstanceId",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "InstanceId",
+					"Selector": "$.InstanceInformationList[0].InstanceId"
+				}
+			]
+		},
+		{
+			"name": "DescribeManagedInstanceForPlatformType",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformType",
+					"Selector": "$.InstanceInformationList[0].PlatformType"
+				}
+			]
+		},
+		{
+			"name": "DescribeManagedInstanceForPlatformVersion",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformVersion",
+					"Selector": "$.InstanceInformationList[0].PlatformVersion"
+				}
+			]
+		},
     {
       "name": "GetLinuxKernelInformationBeforeUpdate",
       "action": "aws:runCommand",
@@ -76,7 +167,7 @@
       "inputs": {
         "DocumentName": "AWS-RunShellScript",
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "Parameters": {
           "commands": [
@@ -96,7 +187,7 @@
       "inputs": {
         "DocumentName": "AWS-RunShellScript",
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "Parameters": {
           "commands": "{{ PreUpdateScript }}"
@@ -111,7 +202,7 @@
       "onFailure": "Abort",
       "inputs": {
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "DesiredState": "stopped"
       }
@@ -124,18 +215,34 @@
       "onFailure": "Abort",
       "inputs": {
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "DesiredState": "running"
       }
     },
-    {
-      "name": "WaitForServiceStart",
-      "action": "aws:sleep",
-      "inputs": {
-        "Duration": "PT3M"
-      }
-    },
+		{
+			"name": "WaitUntilSsmAgentIsOnline",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
+			}
+		},
     {
       "name": "GetLinuxKernelInformationAfterUpdate",
       "action": "aws:runCommand",
@@ -145,7 +252,7 @@
       "inputs": {
         "DocumentName": "AWS-RunShellScript",
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "Parameters": {
           "commands": [
@@ -165,7 +272,7 @@
       "inputs": {
         "DocumentName": "AWS-RunShellScript",
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "Parameters": {
           "commands": "{{ PostUpdateScript }}"
@@ -180,7 +287,7 @@
       "onFailure": "Abort",
       "inputs": {
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "CheckStateOnly": false,
         "DesiredState": "stopped"
@@ -192,7 +299,7 @@
       "maxAttempts": 3,
       "onFailure": "Abort",
       "inputs": {
-        "InstanceId": "{{ LaunchInstance.InstanceIds }}",
+        "InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
         "ImageName": "{{ TargetAmiName }}",
         "NoReboot": true,
         "ImageDescription": "AMI Generated by EC2 Automation on {{global:DATE_TIME}} from {{SourceAmiId}}"
@@ -205,7 +312,7 @@
       "onFailure": "Abort",
       "inputs": {
         "InstanceIds": [
-          "{{ LaunchInstance.InstanceIds }}"
+          "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
         ],
         "DesiredState": "terminated"
       }
