@@ -173,14 +173,6 @@
 				}
 			]
 		},
-
-
-
-
-
-
-
-
 		{
 			"name": "GetLinuxKernelInformationBeforeUpdate",
 			"action": "aws:runCommand",
