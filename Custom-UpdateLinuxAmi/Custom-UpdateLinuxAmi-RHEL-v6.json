@@ -66,22 +66,121 @@
 			"maxAttempts": 3,
 			"onFailure": "Abort",
 			"inputs": {
-				"ImageId": "{{SourceAmiId}}",
-				"InstanceType": "{{InstanceType}}",
+				"ImageId": "{{ SourceAmiId }}",
+				"InstanceType": "{{ InstanceType }}",
 				"UserData": "IyEvYmluL2Jhc2gNCg0KZnVuY3Rpb24gZ2V0X2NvbnRlbnRzKCkgew0KICAgIGlmIFsgLXggIiQod2hpY2ggY3VybCkiIF07IHRoZW4NCiAgICAgICAgY3VybCAtcyAtZiAiJDEiDQogICAgZWxpZiBbIC14ICIkKHdoaWNoIHdnZXQpIiBdOyB0aGVuDQogICAgICAgIHdnZXQgIiQxIiAtTyAtDQogICAgZWxzZQ0KICAgICAgICBkaWUgIk5vIGRvd25sb2FkIHV0aWxpdHkgKGN1cmwsIHdnZXQpIg0KICAgIGZpDQp9DQoNCnJlYWRvbmx5IElERU5USVRZX1VSTD0iaHR0cDovLzE2OS4yNTQuMTY5LjI1NC8yMDE2LTA2LTMwL2R5bmFtaWMvaW5zdGFuY2UtaWRlbnRpdHkvZG9jdW1lbnQvIg0KcmVhZG9ubHkgVFJVRV9SRUdJT049JChnZXRfY29udGVudHMgIiRJREVOVElUWV9VUkwiIHwgYXdrIC1GXCIgJy9yZWdpb24vIHsgcHJpbnQgJDQgfScpDQpyZWFkb25seSBERUZBVUxUX1JFR0lPTj0idXMtZWFzdC0xIg0KcmVhZG9ubHkgUkVHSU9OPSIke1RSVUVfUkVHSU9OOi0kREVGQVVMVF9SRUdJT059Ig0KDQpyZWFkb25seSBTQ1JJUFRfTkFNRT0iYXdzLWluc3RhbGwtc3NtLWFnZW50Ig0KcmVhZG9ubHkgU0NSSVBUX1VSTD0iaHR0cHM6Ly9hd3Mtc3NtLWRvd25sb2Fkcy0kUkVHSU9OLnMzLmFtYXpvbmF3cy5jb20vc2NyaXB0cy8kU0NSSVBUX05BTUUiDQoNCmNkIC90bXANCkZJTEVfU0laRT0wDQpNQVhfUkVUUllfQ09VTlQ9Mw0KUkVUUllfQ09VTlQ9MA0KDQp3aGlsZSBbICRSRVRSWV9DT1VOVCAtbHQgJE1BWF9SRVRSWV9DT1VOVCBdIDsgZG8NCiAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IERvd25sb2FkaW5nIHNjcmlwdCBmcm9tICRTQ1JJUFRfVVJMDQogIGdldF9jb250ZW50cyAiJFNDUklQVF9VUkwiID4gIiRTQ1JJUFRfTkFNRSINCiAgRklMRV9TSVpFPSQoZHUgLWsgL3RtcC8kU0NSSVBUX05BTUUgfCBjdXQgLWYxKQ0KICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogRmluaXNoZWQgZG93bmxvYWRpbmcgc2NyaXB0LCBzaXplOiAkRklMRV9TSVpFDQogIGlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogICAgYnJlYWsNCiAgZWxzZQ0KICAgIGlmIFtbICRSRVRSWV9DT1VOVCAtbHQgTUFYX1JFVFJZX0NPVU5UIF1dOyB0aGVuDQogICAgICBSRVRSWV9DT1VOVD0kKChSRVRSWV9DT1VOVCsxKSk7DQogICAgICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogRmlsZVNpemUgaXMgMCwgcmV0cnlDb3VudDogJFJFVFJZX0NPVU5UDQogICAgZmkNCiAgZmkgDQpkb25lDQoNCmlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogIGNobW9kICt4ICIkU0NSSVBUX05BTUUiDQogIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBSdW5uaW5nIFVwZGF0ZVNTTUFnZW50IHNjcmlwdCBub3cgLi4uLg0KICAuLyIkU0NSSVBUX05BTUUiIC0tcmVnaW9uICIkUkVHSU9OIg0KZWxzZQ0KICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogVW5hYmxlIHRvIGRvd25sb2FkIHNjcmlwdCwgcXVpdHRpbmcgLi4uLg0KZmkNCg==",
 				"MinInstanceCount": 1,
 				"MaxInstanceCount": 1,
-				"IamInstanceProfileName": "{{IamInstanceProfileName}}",
+				"IamInstanceProfileName": "{{ IamInstanceProfileName }}",
 				"SubnetId": "{{ SubnetId }}"
 			}
 		},
 		{
-			"name": "WaitForUserdataExecution",
-			"action": "aws:sleep",
+			"name": "AssertInstanceIsManagedInstance",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
 			"inputs": {
-				"Duration": "PT5M"
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
 			}
 		},
+		{
+			"name": "DescribeManagedInstanceForInstanceId",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "InstanceId",
+					"Selector": "$.InstanceInformationList[0].InstanceId"
+				}
+			]
+		},
+		{
+			"name": "DescribeManagedInstanceForPlatformType",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformType",
+					"Selector": "$.InstanceInformationList[0].PlatformType"
+				}
+			]
+		},
+		{
+			"name": "DescribeManagedInstanceForPlatformVersion",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformVersion",
+					"Selector": "$.InstanceInformationList[0].PlatformVersion"
+				}
+			]
+		},
+
+
+
+
+
+
+
+
 		{
 			"name": "GetLinuxKernelInformationBeforeUpdate",
 			"action": "aws:runCommand",
@@ -91,7 +190,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -111,7 +210,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": "{{ PreUpdateScript }}"
@@ -126,7 +225,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "stopped"
 			}
@@ -139,16 +238,32 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "running"
 			}
 		},
 		{
-			"name": "WaitForServiceStart",
-			"action": "aws:sleep",
+			"name": "WaitUntilSsmAgentIsOnline1",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
 			"inputs": {
-				"Duration": "PT3M"
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
 			}
 		},
 		{
@@ -160,7 +275,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -172,7 +287,7 @@
 			}
 		},
 		{
-			"name": "GetIxgbevfModuleInformationBeforeUpdate",
+			"name": "GetIxgbevfModuleInformation",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -180,7 +295,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -203,7 +318,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": "{{ IxgbevfScript }}"
@@ -218,7 +333,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "stopped"
 			}
@@ -233,7 +348,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstanceAttribute",
 				"Attribute": "sriovNetSupport",
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}"
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 			},
 			"outputs": [
 				{
@@ -254,11 +369,11 @@
 				"Api": "ModifyInstanceAttribute",
 				"Attribute": "sriovNetSupport",
 				"Value": "simple",
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}"
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 			}
 		},
 		{
-			"name": "CheckForSriovNetSupportAfterUpdate",
+			"name": "CheckForSriovNetSupportAfterChange",
 			"action": "aws:executeAwsApi",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
@@ -267,7 +382,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstanceAttribute",
 				"Attribute": "sriovNetSupport",
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}"
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 			},
 			"outputs": [
 				{
@@ -285,13 +400,36 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "running"
 			}
 		},
 		{
-			"name": "GetIxgbevfModuleInformationAfterUpdate",
+			"name": "WaitUntilSsmAgentIsOnline2",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
+			}
+		},
+		{
+			"name": "GetIxgbevfModuleInformationAfterInstall",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -299,7 +437,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -314,7 +452,7 @@
 			}
 		},
 		{
-			"name": "GetEnaModuleInformationBeforeUpdate",
+			"name": "GetEnaModuleInformation",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -322,7 +460,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -345,7 +483,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": "{{ EnaScript }}"
@@ -360,7 +498,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "stopped"
 			}
@@ -375,7 +513,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstances",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				]
 			},
 			"outputs": [
@@ -397,11 +535,11 @@
 				"Api": "ModifyInstanceAttribute",
 				"Attribute": "enaSupport",
 				"Value": "true",
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}"
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 			}
 		},
 		{
-			"name": "CheckForEnaSupportAfterUpdate",
+			"name": "CheckForEnaSupportAfterChange",
 			"action": "aws:executeAwsApi",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
@@ -410,7 +548,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstances",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				]
 			},
 			"outputs": [
@@ -431,7 +569,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstances",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				]
 			},
 			"outputs": [
@@ -453,11 +591,11 @@
 				"Api": "ModifyInstanceAttribute",
 				"Attribute": "instanceType",
 				"Value": "{{ InstanceTypeForEnaSupport }}",
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}"
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 			}
 		},
 		{
-			"name": "CheckForInstanceTypeAfterUpdate",
+			"name": "CheckForInstanceTypeAfterChange",
 			"action": "aws:executeAwsApi",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
@@ -466,7 +604,7 @@
 				"Service": "ec2",
 				"Api": "DescribeInstances",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				]
 			},
 			"outputs": [
@@ -485,13 +623,36 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "running"
 			}
 		},
 		{
-			"name": "GetEnaModuleInformationAfterUpdate",
+			"name": "WaitUntilSsmAgentIsOnline3",
+			"action": "aws:assertAwsResourceProperty",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				],
+				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
+				"DesiredValues": [
+					"Online"
+				]
+			}
+		},
+		{
+			"name": "GetEnaModuleInformationAfterInstall",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -499,7 +660,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -522,7 +683,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunShellScript",
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"Parameters": {
 					"commands": "{{ PostUpdateScript }}"
@@ -537,7 +698,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"CheckStateOnly": false,
 				"DesiredState": "stopped"
@@ -549,7 +710,7 @@
 			"maxAttempts": 3,
 			"onFailure": "Abort",
 			"inputs": {
-				"InstanceId": "{{ LaunchInstance.InstanceIds }}",
+				"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
 				"ImageName": "{{ TargetAmiName }}",
 				"NoReboot": true,
 				"ImageDescription": "AMI Generated by EC2 Automation on {{global:DATE_TIME}} from {{SourceAmiId}}"
@@ -562,7 +723,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ LaunchInstance.InstanceIds }}"
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "terminated"
 			}
