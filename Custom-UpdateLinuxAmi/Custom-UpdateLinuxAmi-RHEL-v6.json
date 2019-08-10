@@ -7,6 +7,11 @@
 			"type": "String",
 			"description": "(Required) The source Amazon Machine Image ID."
 		},
+		"SubnetId": {
+			"type": "String",
+			"description": "(Required) Specify the SubnetId if you want to launch EC2 instance in a specific subnet.",
+			"default": ""
+		},
 		"IamInstanceProfileName": {
 			"type": "String",
 			"description": "(Required) The instance profile that enables Systems Manager (SSM) to manage the instance.",
@@ -31,11 +36,6 @@
 			"type": "String",
 			"description": "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is r4.xlarge.",
 			"default": "r4.xlarge"
-		},
-		"SubnetId": {
-			"type": "String",
-			"description": "(Optional) Specify the SubnetId if you want to launch EC2 instance in a specific subnet.",
-			"default": ""
 		},
 		"PreUpdateScript": {
 			"type": "String",
