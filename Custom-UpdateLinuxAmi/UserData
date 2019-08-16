@@ -3,15 +3,6 @@
 # Logger
 exec > >(tee /var/log/user-data_ssm-agent_installation.log || logger -t user-data -s 2> /dev/console) 2>&1
 
-# Variable definition
-readonly IDENTITY_URL="http://169.254.169.254/2016-06-30/dynamic/instance-identity/document/"
-readonly TRUE_REGION=$(get_contents "$IDENTITY_URL" | awk -F\" '/region/ { print $4 }')
-readonly DEFAULT_REGION="us-east-1"
-readonly REGION="${TRUE_REGION:-$DEFAULT_REGION}"
-
-readonly SCRIPT_NAME="aws-install-ssm-agent"
-readonly SCRIPT_URL="https://aws-ssm-downloads-$REGION.s3.amazonaws.com/scripts/$SCRIPT_NAME"
-
 #-------------------------------------------------------------------------------
 # Define Function
 #-------------------------------------------------------------------------------
@@ -159,6 +150,15 @@ function install_ssm_agent () {
 # Main Routine
 #-------------------------------------------------------------------------------
 
+# Variable definition
+readonly IDENTITY_URL="http://169.254.169.254/2016-06-30/dynamic/instance-identity/document/"
+readonly TRUE_REGION=$(get_contents "$IDENTITY_URL" | awk -F\" '/region/ { print $4 }')
+readonly DEFAULT_REGION="us-east-1"
+readonly REGION="${TRUE_REGION:-$DEFAULT_REGION}"
+
+readonly SCRIPT_NAME="aws-install-ssm-agent"
+readonly SCRIPT_URL="https://aws-ssm-downloads-$REGION.s3.amazonaws.com/scripts/$SCRIPT_NAME"
+
 # call the os info function to get details
 get_os_info
 
@@ -180,7 +180,6 @@ else
         zypper --quiet --non-interactive install curl
     else
         echo "Unsupported distribution: ${DIST} and distribution type: ${DIST_TYPE}"
-        exit 1
     fi
 fi
 
@@ -197,3 +196,4 @@ echo "Distribution type of the machine is ${DIST_TYPE}."
 echo "Revision of the distro is ${REV}."
 echo "Kernel version of the machine is ${KERNEL_VERSION}."
 
+exit 0
