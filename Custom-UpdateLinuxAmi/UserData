@@ -150,17 +150,18 @@ function install_ssm_agent () {
 # Main Routine
 #-------------------------------------------------------------------------------
 
-# Variable definition
-readonly IDENTITY_URL="http://169.254.169.254/2016-06-30/dynamic/instance-identity/document/"
-readonly TRUE_REGION=$(get_contents "$IDENTITY_URL" | awk -F\" '/region/ { print $4 }')
-readonly DEFAULT_REGION="us-east-1"
-readonly REGION="${TRUE_REGION:-$DEFAULT_REGION}"
-
-readonly SCRIPT_NAME="aws-install-ssm-agent"
-readonly SCRIPT_URL="https://aws-ssm-downloads-$REGION.s3.amazonaws.com/scripts/$SCRIPT_NAME"
-
 # call the os info function to get details
 get_os_info
+
+# Information Linux Distribution
+KERNEL_VERSION=$(uname -r )
+KERNEL_GROUP=$(echo "${KERNEL_VERSION}" | cut -f 1-2 -d'.')
+KERNEL_VERSION_WO_ARCH=$(basename ${KERNEL_VERSION} .x86_64)
+
+echo "Distribution of the machine is ${DIST}." 
+echo "Distribution type of the machine is ${DIST_TYPE}."
+echo "Revision of the distro is ${REV}."
+echo "Kernel version of the machine is ${KERNEL_VERSION}."
 
 # Install curl Command
 if [ $(command -v curl) ]; then
@@ -183,17 +184,16 @@ else
     fi
 fi
 
+# Variable definition
+readonly IDENTITY_URL="http://169.254.169.254/2016-06-30/dynamic/instance-identity/document/"
+readonly TRUE_REGION=$(get_contents "$IDENTITY_URL" | awk -F\" '/region/ { print $4 }')
+readonly DEFAULT_REGION="us-east-1"
+readonly REGION="${TRUE_REGION:-$DEFAULT_REGION}"
+
+readonly SCRIPT_NAME="aws-install-ssm-agent"
+readonly SCRIPT_URL="https://aws-ssm-downloads-$REGION.s3.amazonaws.com/scripts/$SCRIPT_NAME"
+
 # call the SSM Agent Installer script function
 install_ssm_agent
-
-# Information Linux Distribution
-KERNEL_VERSION=$(uname -r )
-KERNEL_GROUP=$(echo "${KERNEL_VERSION}" | cut -f 1-2 -d'.')
-KERNEL_VERSION_WO_ARCH=$(basename ${KERNEL_VERSION} .x86_64)
-
-echo "Distribution of the machine is ${DIST}." 
-echo "Distribution type of the machine is ${DIST_TYPE}."
-echo "Revision of the distro is ${REV}."
-echo "Kernel version of the machine is ${KERNEL_VERSION}."
 
 exit 0
