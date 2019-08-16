@@ -79,130 +79,58 @@ function get_os_info () {
 
 function exec_ssm_agent_installer_script () {
 
+    cd /tmp
+    FILE_SIZE=0
+    MAX_RETRY_COUNT=3
+    RETRY_COUNT=0
+
+    while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
+      echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
+      get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
+      FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
+      echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
+      if [ $FILE_SIZE -gt 0 ]; then
+        break
+      else
+        if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
+          RETRY_COUNT=$((RETRY_COUNT+1));
+          echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
+        fi
+      fi 
+    done
+
+    if [ $FILE_SIZE -gt 0 ]; then
+      chmod +x "$SCRIPT_NAME"
+      echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
+      ./"$SCRIPT_NAME" --region "$REGION"
+    else
+      echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
+    fi
+}
+
+
+
+function install_ssm_agent () {
+
     # Amazon Linux Distribution
     if [ "${DIST}" = "Amazon Linux AMI" ] || [ "${DIST}" = "Amazon Linux" ] || [ "${DIST_TYPE}" = "amzn" ]; then
-      while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
-        echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
-        get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
-        FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
-        echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
-        if [ $FILE_SIZE -gt 0 ]; then
-          break
-         else
-          if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
-            RETRY_COUNT=$((RETRY_COUNT+1));
-            echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
-          fi
-        fi 
-      done
-
-      if [ $FILE_SIZE -gt 0 ]; then
-        chmod +x "$SCRIPT_NAME"
-        echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
-        ./"$SCRIPT_NAME" --region "$REGION"
-      else
-        echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
-      fi
+      exec_ssm_agent_installer_script
 
     # Red Hat Enterprise Linux Distribution
     elif [ "${DIST}" = "RHEL" ] || [ "${DIST}" = "Red Hat Enterprise Linux Server" ] || [ "${DIST_TYPE}" = "rhel" ]; then
-      while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
-        echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
-        get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
-        FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
-        echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
-        if [ $FILE_SIZE -gt 0 ]; then
-          break
-         else
-          if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
-            RETRY_COUNT=$((RETRY_COUNT+1));
-            echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
-          fi
-        fi 
-      done
-
-      if [ $FILE_SIZE -gt 0 ]; then
-        chmod +x "$SCRIPT_NAME"
-        echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
-        ./"$SCRIPT_NAME" --region "$REGION"
-      else
-        echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
-      fi
+      exec_ssm_agent_installer_script
 
     # CemtOS Linux Distribution
     elif [ "${DIST}" = "CentOS" ] || [ "${DIST_TYPE}" = "centos" ]; then
-      while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
-        echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
-        get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
-        FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
-        echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
-        if [ $FILE_SIZE -gt 0 ]; then
-          break
-         else
-          if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
-            RETRY_COUNT=$((RETRY_COUNT+1));
-            echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
-          fi
-        fi 
-      done
-
-      if [ $FILE_SIZE -gt 0 ]; then
-        chmod +x "$SCRIPT_NAME"
-        echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
-        ./"$SCRIPT_NAME" --region "$REGION"
-      else
-        echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
-      fi
+      exec_ssm_agent_installer_script
 
     # Ubuntu Linux Distribution
     elif [ "${DIST}" = "Ubuntu" ] || [ "${DIST_TYPE}" = "ubuntu" ]; then
-      while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
-        echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
-        get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
-        FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
-        echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
-        if [ $FILE_SIZE -gt 0 ]; then
-          break
-         else
-          if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
-            RETRY_COUNT=$((RETRY_COUNT+1));
-            echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
-          fi
-        fi 
-      done
-
-      if [ $FILE_SIZE -gt 0 ]; then
-        chmod +x "$SCRIPT_NAME"
-        echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
-        ./"$SCRIPT_NAME" --region "$REGION"
-      else
-        echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
-      fi
+      exec_ssm_agent_installer_script
 
     # Debian GNU/Linux Distribution
     elif [ "${DIST}" = "Debian GNU/Linux" ] || [ "${DIST_TYPE}" = "debian" ]; then
-      while [ $RETRY_COUNT -lt $MAX_RETRY_COUNT ] ; do
-        echo AWS-UpdateLinuxAmi: Downloading script from $SCRIPT_URL
-        get_contents "$SCRIPT_URL" > "$SCRIPT_NAME"
-        FILE_SIZE=$(du -k /tmp/$SCRIPT_NAME | cut -f1)
-        echo AWS-UpdateLinuxAmi: Finished downloading script, size: $FILE_SIZE
-        if [ $FILE_SIZE -gt 0 ]; then
-          break
-         else
-          if [[ $RETRY_COUNT -lt MAX_RETRY_COUNT ]]; then
-            RETRY_COUNT=$((RETRY_COUNT+1));
-            echo AWS-UpdateLinuxAmi: FileSize is 0, retryCount: $RETRY_COUNT
-          fi
-        fi 
-      done
-
-      if [ $FILE_SIZE -gt 0 ]; then
-        chmod +x "$SCRIPT_NAME"
-        echo AWS-UpdateLinuxAmi: Running UpdateSSMAgent script now ....
-        ./"$SCRIPT_NAME" --region "$REGION"
-      else
-        echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
-      fi
+      exec_ssm_agent_installer_script
 
     # SUSE Linux Enterprise Server Distribution
     elif [ "${DIST}" = "SLES" ] || [ "${DIST_TYPE}" = "sles" ]; then
@@ -231,11 +159,6 @@ function exec_ssm_agent_installer_script () {
 # Main Routine
 #-------------------------------------------------------------------------------
 
-cd /tmp
-FILE_SIZE=0
-MAX_RETRY_COUNT=3
-RETRY_COUNT=0
-
 # call the os info function to get details
 get_os_info
 
@@ -249,6 +172,8 @@ else
         yum install -y curl
     elif [ $(command -v apt-get) ]; then
         # Package Install curl Tools (Debian, Ubuntu)
+        export DEBIAN_FRONTEND=noninteractive
+        apt clean -y
         apt install -y curl
     elif [ $(command -v zypper) ]; then
         # Package Install curl Tools (SUSE Linux Enterprise Server)
@@ -260,7 +185,7 @@ else
 fi
 
 # call the SSM Agent Installer script function
-exec_ssm_agent_installer_script
+install_ssm_agent
 
 # Information Linux Distribution
 KERNEL_VERSION=$(uname -r )
