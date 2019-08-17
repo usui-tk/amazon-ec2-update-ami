@@ -1,5 +1,7 @@
 #!/bin/bash -v
 
+set -e -x
+
 #-------------------------------------------------------------------------------
 # Custom Package Installation [Intel Network Driver(ixgbevf)]
 #

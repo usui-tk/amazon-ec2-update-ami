@@ -1,5 +1,7 @@
 #!/bin/bash -v
 
+set -e -x
+
 #-------------------------------------------------------------------------------
 # Custom Package Installation [Amazon Network Driver(ena)]
 #

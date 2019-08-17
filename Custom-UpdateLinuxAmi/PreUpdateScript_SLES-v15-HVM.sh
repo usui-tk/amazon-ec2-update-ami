@@ -1,5 +1,7 @@
 #!/bin/bash -v
 
+set -e -x
+
 # Logger
 exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/console) 2>&1
 

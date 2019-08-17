@@ -1,5 +1,7 @@
 #!/bin/bash -v
 
+set -e -x
+
 # Logger
 exec > >(tee /var/log/user-data_ssm-agent_installation.log || logger -t user-data -s 2> /dev/console) 2>&1
 
@@ -69,7 +71,6 @@ function get_os_info () {
 }
 
 function exec_ssm_agent_installer_script () {
-
     cd /tmp
     FILE_SIZE=0
     MAX_RETRY_COUNT=3
@@ -98,8 +99,6 @@ function exec_ssm_agent_installer_script () {
       echo AWS-UpdateLinuxAmi: Unable to download script, quitting ....
     fi
 }
-
-
 
 function install_ssm_agent () {
 
@@ -142,7 +141,7 @@ function install_ssm_agent () {
 
     # Unknown Linux Distribution
     else
-        echo "Unsupported Userdata Script Linux distribution"
+        echo "Unsupported SSM Agent Installer Script - Linux distribution: ${DIST} and distribution type: ${DIST_TYPE}"
     fi
 }
 
@@ -180,7 +179,7 @@ else
         # Package Install curl Tools (SUSE Linux Enterprise Server)
         zypper --quiet --non-interactive install curl
     else
-        echo "Unsupported distribution: ${DIST} and distribution type: ${DIST_TYPE}"
+        echo "Unsupported curl install - Linux distribution: ${DIST} and distribution type: ${DIST_TYPE}"
     fi
 fi
 
