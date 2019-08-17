@@ -12,6 +12,9 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #    https://www.suse.com/ja-jp/documentation/sles-15/
 #    https://www.suse.com/documentation/suse-best-practices/
 #    https://forums.suse.com/forumdisplay.php?94-Amazon-EC2
+#    
+#    https://susepubliccloudinfo.suse.com/v1/amazon/images/active.json
+#    https://susepubliccloudinfo.suse.com/v1/amazon/images/active.xml
 #
 #    https://aws.amazon.com/jp/partners/suse/faqs/
 #    https://aws.amazon.com/marketplace/pp/B07SPX8ML1
@@ -19,6 +22,7 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #
 #    https://en.opensuse.org/YaST_Software_Management
 #
+#    https://github.com/SUSE-Enceladus
 #-------------------------------------------------------------------------------
 
 # Show Linux Distribution/Distro information
@@ -100,6 +104,7 @@ if [ $SlesForSp1Flag -gt 0 ];then
 	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
 	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
 	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+	zypper --quiet --non-interactive install python3-susepubliccloudinfo
 else
 	echo "SUSE Linux Enterprise Server 15 (non SP1)" 
 	# Package Install SLES System AWS Tools (from SUSE Linux Enterprise Server Software repository)
@@ -107,6 +112,7 @@ else
 	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
 	# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
 	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+	zypper --quiet --non-interactive install python3-susepubliccloudinfo
 fi
 
 # Package Install SAP Utility and Tools (from SUSE Linux Enterprise Server Software repository)
