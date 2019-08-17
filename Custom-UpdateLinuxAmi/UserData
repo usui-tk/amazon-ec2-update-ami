@@ -128,8 +128,6 @@ function install_ssm_agent () {
 
       rpm -qi amazon-ssm-agent
 
-      systemctl daemon-reload
-
       systemctl status -l amazon-ssm-agent
       systemctl enable amazon-ssm-agent
       systemctl is-enabled amazon-ssm-agent
