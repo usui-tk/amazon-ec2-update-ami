@@ -128,14 +128,7 @@ function install_ssm_agent () {
 
       rpm -qi amazon-ssm-agent
 
-      systemctl status -l amazon-ssm-agent
-      systemctl enable amazon-ssm-agent
-      systemctl is-enabled amazon-ssm-agent
-
-      systemctl restart amazon-ssm-agent
-      systemctl status -l amazon-ssm-agent
-
-      ssm-cli get-instance-information
+      systemctl start amazon-ssm-agent
 
     # Unknown Linux Distribution
     else
