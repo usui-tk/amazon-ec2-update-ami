@@ -135,6 +135,10 @@ function install_ssm_agent () {
 
       systemctl start amazon-ssm-agent
 
+      systemctl is-enabled amazon-ssm-agent
+      systemctl enable amazon-ssm-agent
+      systemctl is-enabled amazon-ssm-agent
+
       echo "Complete SSM Agent Install - Linux distribution: ${DIST} - ${REV}"
 
     # Unknown Linux Distribution
