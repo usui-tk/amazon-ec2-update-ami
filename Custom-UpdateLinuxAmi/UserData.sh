@@ -105,27 +105,27 @@ function install_ssm_agent () {
     # Amazon Linux Distribution
     if [ "${DIST}" = "Amazon Linux AMI" ] || [ "${DIST}" = "Amazon Linux" ] || [ "${DIST_TYPE}" = "amzn" ]; then
       exec_ssm_agent_installer_script
-      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${REV}"
 
     # Red Hat Enterprise Linux Distribution
     elif [ "${DIST}" = "RHEL" ] || [ "${DIST}" = "Red Hat Enterprise Linux Server" ] || [ "${DIST_TYPE}" = "rhel" ]; then
       exec_ssm_agent_installer_script
-      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${REV}"
 
     # CemtOS Linux Distribution
     elif [ "${DIST}" = "CentOS" ] || [ "${DIST_TYPE}" = "centos" ]; then
       exec_ssm_agent_installer_script
-      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${REV}"
 
     # Ubuntu Linux Distribution
     elif [ "${DIST}" = "Ubuntu" ] || [ "${DIST_TYPE}" = "ubuntu" ]; then
       exec_ssm_agent_installer_script
-      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${REV}"
 
     # Debian GNU/Linux Distribution
     elif [ "${DIST}" = "Debian GNU/Linux" ] || [ "${DIST_TYPE}" = "debian" ]; then
       exec_ssm_agent_installer_script
-      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Installer Script - Linux distribution: ${DIST} - ${REV}"
 
     # SUSE Linux Enterprise Server Distribution
     elif [ "${DIST}" = "SLES" ] || [ "${DIST_TYPE}" = "sles" ]; then
@@ -135,11 +135,11 @@ function install_ssm_agent () {
 
       systemctl start amazon-ssm-agent
 
-      echo "Complete SSM Agent Install - Linux distribution: ${DIST} - ${DIST_TYPE} - ${REV}"
+      echo "Complete SSM Agent Install - Linux distribution: ${DIST} - ${REV}"
 
     # Unknown Linux Distribution
     else
-      echo "Unsupported SSM Agent Installer Script - Linux distribution: ${DIST} and distribution type: ${DIST_TYPE}"
+      echo "Unsupported SSM Agent Installer Script - Linux distribution: ${DIST} and distribution revision: ${REV}"
     fi
 }
 
@@ -162,7 +162,7 @@ echo "Kernel version of the machine is ${KERNEL_VERSION}."
 
 # Install curl Command
 if [ $(command -v curl) ]; then
-    echo "Preinstalled curl command - Linux distribution: ${DIST} and distribution type: ${DIST_TYPE}"
+    echo "Preinstalled curl command - Linux distribution: ${DIST} and distribution revision: ${REV}"
 else 
     if [ $(command -v yum) ]; then
         # Package Install curl Tools (Amazon Linux, Red Hat Enterprise Linux, CentOS)
@@ -178,7 +178,7 @@ else
         zypper clean --all
         zypper --quiet --non-interactive install curl
     else
-        echo "Unsupported curl install - Linux distribution: ${DIST} and distribution type: ${DIST_TYPE}"
+        echo "Unsupported curl install - Linux distribution: ${DIST} and distribution revision: ${REV}"
     fi
 fi
 
