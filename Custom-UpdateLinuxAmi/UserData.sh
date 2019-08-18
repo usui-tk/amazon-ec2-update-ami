@@ -135,7 +135,6 @@ function install_ssm_agent () {
 
       systemctl start amazon-ssm-agent
 
-      systemctl is-enabled amazon-ssm-agent
       systemctl enable amazon-ssm-agent
       systemctl is-enabled amazon-ssm-agent
 
