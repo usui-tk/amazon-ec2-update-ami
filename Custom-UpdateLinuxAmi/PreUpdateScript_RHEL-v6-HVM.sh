@@ -65,7 +65,7 @@ yum-config-manager --enable rhui-REGION-client-config-server-6
 yum-config-manager --enable rhui-REGION-rhel-server-extras
 yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
 yum-config-manager --enable rhui-REGION-rhel-server-supplementary
-# yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+yum-config-manager --enable rhui-REGION-rhel-server-rhscl
 
 # yum repository metadata Clean up
 yum clean all
@@ -78,13 +78,16 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y dstat gdisk git hdparm libicu lsof lzop iotop mtr nc nmap sos tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
+yum install -y dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 yum install -y setroubleshoot-server setools-console
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 yum install -y redhat-lsb-core redhat-support-tool
+
+# Package Install Python 3 Runtime (from Red Hat Official Repository)
+yum install -y rh-python36 rh-python36-python-pip rh-python36-python-devel rh-python36-python-tools
 
 # Package Install EPEL(Extra Packages for Enterprise Linux) Repository Package
 # yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
@@ -183,14 +186,20 @@ pip install python-daemon
 pip install requests
 
 curl -sS "https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz" -o "/tmp/aws-cfn-bootstrap-latest.tar.gz"
-tar -pxvzf /tmp/aws-cfn-bootstrap-latest.tar.gz -C /tmp
+tar -pxzf "/tmp/aws-cfn-bootstrap-latest.tar.gz" -C /tmp
 
 cd /tmp/aws-cfn-bootstrap-1.4/
 python setup.py build
 python setup.py install
 
 chmod 775 /usr/init/redhat/cfn-hup
-ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup
+
+if [ -L /etc/init.d/cfn-hup ]; then
+	echo "Symbolic link exists"
+else
+	echo "No symbolic link exists"
+	ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup
+fi
 
 cd /tmp
 
@@ -199,9 +208,8 @@ cd /tmp
 # http://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/sysman-install-ssm-agent.html
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
-# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
-# yum localinstall -y "https://amazon-ssm-${Region}.s3.amazonaws.com/latest/linux_amd64/amazon-ssm-agent.rpm"
+# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 rpm -qi amazon-ssm-agent
 
@@ -216,23 +224,23 @@ status amazon-ssm-agent
 # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
 #-------------------------------------------------------------------------------
 
-curl -sS "https://inspector-agent.amazonaws.com/linux/latest/install" -o "/tmp/Install-Amazon-Inspector-Agent"
+curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex
 
-chmod 700 /tmp/Install-Amazon-Inspector-Agent
-bash /tmp/Install-Amazon-Inspector-Agent
+# Check the exit code of the Amazon Inspector Agent installer script
+if [ $? -eq 0 ]; then
+    rpm -qi AwsAgent
+	
+	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
+	service awsagent status
+	service awsagent restart
+	service awsagent status
 
-rpm -qi AwsAgent
+	chkconfig --list awsagent
+	chkconfig awsagent on
+	chkconfig --list awsagent
 
-/opt/aws/awsagent/bin/awsagent status
-
-# Configure Amazon Inspector Agent software (Start Daemon awsagent)
-service awsagent status
-service awsagent restart
-service awsagent status
-
-chkconfig --list awsagent
-chkconfig awsagent on
-chkconfig --list awsagent
+	/opt/aws/awsagent/bin/awsagent status
+fi
 
 #-------------------------------------------------------------------------------
 # Custom Package Install [Amazon CloudWatch Agent]

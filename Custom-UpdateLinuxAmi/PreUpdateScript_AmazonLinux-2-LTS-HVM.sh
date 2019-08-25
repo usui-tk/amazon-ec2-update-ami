@@ -63,7 +63,7 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install Amazon Linux System Administration Tools (from Amazon Official Repository)
-yum install -y acpid arptables bash-completion bc dstat dmidecode ebtables fio gdisk git hdparm jq lsof lzop iperf3 iotop mlocate mtr nc nmap nvme-cli numactl perf rsync strace sysstat system-lsb-core tcpdump traceroute tree uuid vim-enhanced yum-plugin-versionlock yum-utils wget zstd
+yum install -y acpid arptables bash-completion bc dstat dmidecode ebtables fio gdisk git hdparm jq kexec-tools lsof lzop iperf3 iotop mlocate mtr nc net-snmp-utils nmap nvme-cli numactl perf rsync strace sysstat system-lsb-core tcpdump traceroute tree uuid vim-enhanced yum-plugin-versionlock yum-utils wget zstd
 yum install -y amazon-efs-utils cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 
@@ -121,11 +121,11 @@ cat ~/.aws/config
 
 rpm -qi amazon-ssm-agent
 
-# systemctl daemon-reload
-
-systemctl status -l amazon-ssm-agent
-systemctl enable amazon-ssm-agent
-systemctl is-enabled amazon-ssm-agent
+# Configure AWS Systems Manager Agent software (Start Daemon awsagent)
+if [ $(systemctl is-enabled amazon-ssm-agent) = "disabled" ]; then
+	systemctl enable amazon-ssm-agent
+	systemctl is-enabled amazon-ssm-agent
+fi
 
 # systemctl restart amazon-ssm-agent
 # systemctl status -l amazon-ssm-agent
@@ -137,24 +137,30 @@ systemctl is-enabled amazon-ssm-agent
 # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
 #-------------------------------------------------------------------------------
 
-curl -sS "https://inspector-agent.amazonaws.com/linux/latest/install" -o "/tmp/Install-Amazon-Inspector-Agent"
+curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex 
 
-chmod 700 /tmp/Install-Amazon-Inspector-Agent
-bash /tmp/Install-Amazon-Inspector-Agent
+# Check the exit code of the Amazon Inspector Agent installer script
+if [ $? -eq 0 ]; then
+    rpm -qi AwsAgent
+	
+	systemctl daemon-reload
 
-rpm -qi AwsAgent
+	systemctl restart awsagent
 
-/opt/aws/awsagent/bin/awsagent status
+	systemctl status -l awsagent
 
-# Configure Amazon Inspector Agent software (Start Daemon awsagent)
-systemctl status awsagent
-systemctl enable awsagent
-systemctl is-enabled awsagent
+	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
+	if [ $(systemctl is-enabled awsagent) = "disabled" ]; then
+		systemctl enable awsagent
+		systemctl is-enabled awsagent
+	fi
 
-systemctl restart awsagent
-systemctl status awsagent
+	systemctl restart awsagent
 
-/opt/aws/awsagent/bin/awsagent status
+	systemctl status -l awsagent
+
+	/opt/aws/awsagent/bin/awsagent status
+fi
 
 #-------------------------------------------------------------------------------
 # Custom Package Install [Amazon CloudWatch Agent]
@@ -163,8 +169,13 @@ systemctl status awsagent
 
 yum localinstall -y "https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
-# Package Information 
 rpm -qi amazon-cloudwatch-agent
+
+cat /opt/aws/amazon-cloudwatch-agent/bin/CWAGENT_VERSION
+
+cat /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
+
+systemctl daemon-reload
 
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
 
@@ -181,20 +192,30 @@ yum clean all
 # Configure NTP Client software (Install chrony Package)
 yum install -y chrony
 
+rpm -qi chrony
+
+systemctl daemon-reload
+
+systemctl status -l chronyd
+
+# Configure NTP Client software (Start Daemon chronyd)
+if [ $(systemctl is-enabled chronyd) = "disabled" ]; then
+	systemctl enable chronyd
+	systemctl is-enabled chronyd
+fi
+
+systemctl restart chronyd
+
+systemctl status -l chronyd
+
 # Configure NTP Client software (Configure chronyd)
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 
 sed -i 's/#log measurements statistics tracking/log measurements statistics tracking/g' /etc/chrony.conf
 
-# Configure NTP Client software (Start Daemon chronyd)
-systemctl status chronyd
-systemctl restart chronyd
-systemctl status chronyd
-
-systemctl enable chronyd
-systemctl is-enabled chronyd
-
 # Configure NTP Client software (Time adjustment)
+systemctl restart chronyd
+
 sleep 3
 
 chronyc tracking
@@ -209,13 +230,19 @@ chronyc sourcestats -v
 # Package Install ec2sys-autotune
 yum install -y ec2sys-autotune
 
-# Configure ec2sys-autotune software (Start Daemon autotune)
-systemctl status autotune
-systemctl restart autotune
-systemctl status autotune
+rpm -qi ec2sys-autotune
 
-systemctl enable autotune
-systemctl is-enabled autotune
+systemctl daemon-reload
+
+# Configure ec2sys-autotune software (Start Daemon autotune)
+if [ $(systemctl is-enabled autotune) = "disabled" ]; then
+	systemctl enable autotune
+	systemctl is-enabled autotune
+fi
+
+systemctl restart autotune
+
+systemctl status -l autotune
 
 autotune status
 autotune list

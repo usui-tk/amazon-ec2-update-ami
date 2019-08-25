@@ -85,12 +85,12 @@ zypper --quiet --non-interactive install --type pattern enhanced_base
 SlesForSp1Flag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES15-SP1")
 if [ $SlesForSp1Flag -gt 0 ];then
 	echo "SUSE Linux Enterprise Server 15 SP1"
-	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop jq kmod-bash-completion lsb-release lzop nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
+	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop jq kexec-tools kmod-bash-completion lsb-release lzop net-snmp nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
 	zypper --quiet --non-interactive install aws-efs-utils cifs-utils nfs-client nfs-utils nfs4-acl-tools yast2-nfs-client
 	zypper --quiet --non-interactive install libiscsi-utils libiscsi8 lsscsi open-iscsi sdparm sg3_utils yast2-iscsi-client
 else
 	echo "SUSE Linux Enterprise Server 15 (non SP1)" 
-	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop kmod-bash-completion lsb-release lzop nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
+	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop kexec-tools kmod-bash-completion lsb-release lzop net-snmp nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
 	zypper --quiet --non-interactive install aws-efs-utils cifs-utils nfs-client nfs-utils nfs4-acl-tools yast2-nfs-client
 	zypper --quiet --non-interactive install libiscsi-utils libiscsi8 lsscsi open-iscsi sdparm sg3_utils yast2-iscsi-client
 fi
@@ -175,9 +175,6 @@ cat ~/.aws/config
 # http://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/sysman-install-ssm-agent.html
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
-# zypper --quiet --non-interactive --no-gpg-checks install "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
-# zypper --quiet --non-interactive --no-gpg-checks install "https://amazon-ssm-${Region}.s3.amazonaws.com/latest/linux_amd64/amazon-ssm-agent.rpm"
-# zypper --quiet --non-interactive install amazon-ssm-agent
 
 # zypper --quiet --non-interactive --no-gpg-checks install "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
@@ -185,11 +182,18 @@ rpm -qi amazon-ssm-agent
 
 # systemctl daemon-reload
 
-systemctl status -l amazon-ssm-agent
-systemctl enable amazon-ssm-agent
-systemctl is-enabled amazon-ssm-agent
+# systemctl restart amazon-ssm-agent
+
+# systemctl status -l amazon-ssm-agent
+
+# Configure AWS Systems Manager Agent software (Start Daemon awsagent)
+if [ $(systemctl is-enabled amazon-ssm-agent) = "disabled" ]; then
+	systemctl enable amazon-ssm-agent
+	systemctl is-enabled amazon-ssm-agent
+fi
 
 # systemctl restart amazon-ssm-agent
+
 # systemctl status -l amazon-ssm-agent
 
 # ssm-cli get-instance-information
@@ -219,22 +223,31 @@ zypper --quiet refresh -fdb
 
 # Configure NTP Client software (Install chrony Package)
 zypper --quiet --non-interactive install chrony
+
+rpm -qi chrony
+
 systemctl daemon-reload
+
+systemctl status -l chronyd
+
+# Configure NTP Client software (Start Daemon chronyd)
+if [ $(systemctl is-enabled chronyd) = "disabled" ]; then
+	systemctl enable chronyd
+	systemctl is-enabled chronyd
+fi
+
+systemctl restart chronyd
+
+systemctl status -l chronyd
 
 # Configure NTP Client software (Configure chronyd)
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 
 sed -i 's/#log measurements statistics tracking/log measurements statistics tracking/g' /etc/chrony.conf
 
-# Configure NTP Client software (Start Daemon chronyd)
-systemctl status chronyd
-systemctl restart chronyd
-systemctl status chronyd
-
-systemctl enable chronyd
-systemctl is-enabled chronyd
-
 # Configure NTP Client software (Time adjustment)
+systemctl restart chronyd
+
 sleep 3
 
 chronyc tracking
@@ -248,13 +261,19 @@ chronyc sourcestats -v
 # Package Install Tuned (from SUSE Linux Enterprise Server Software repository)
 zypper --quiet --non-interactive install tuned
 
-# Configure Tuned software (Start Daemon tuned)
-systemctl status tuned
-systemctl restart tuned
-systemctl status tuned
+rpm -qi tuned
 
-systemctl enable tuned
-systemctl is-enabled tuned
+systemctl daemon-reload
+
+# Configure Tuned software (Start Daemon tuned)
+if [ $(systemctl is-enabled tuned) = "disabled" ]; then
+	systemctl enable tuned
+	systemctl is-enabled tuned
+fi
+
+systemctl restart tuned
+
+systemctl status -l tuned
 
 # Configure Tuned software
 SlesForSapFlag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES_SAP15")
