@@ -142,8 +142,8 @@ InstanceType=$(curl -s "http://169.254.169.254/latest/meta-data/instance-type")
 PrivateIp=$(curl -s "http://169.254.169.254/latest/meta-data/local-ipv4")
 AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
-# IAM Role & STS Information
-if [ $(command -v jq) ]; then
+# IAM Role Information
+if [ $(compgen -ac | sort | uniq | grep jq) ]; then
     RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi

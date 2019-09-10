@@ -133,8 +133,8 @@ InstanceType=$(curl -s "http://169.254.169.254/latest/meta-data/instance-type")
 PrivateIp=$(curl -s "http://169.254.169.254/latest/meta-data/local-ipv4")
 AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
-# IAM Role & STS Information
-if [ $(command -v jq) ]; then
+# IAM Role Information
+if [ $(compgen -ac | sort | uniq | grep jq) ]; then
     RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
@@ -248,10 +248,14 @@ fi
 # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
 #-------------------------------------------------------------------------------
 
-curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex 
+# Variable initialization
+InspectorInstallStatus="0"
+
+# Run Amazon Inspector Agent installer script
+curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex || InspectorInstallStatus=$?
 
 # Check the exit code of the Amazon Inspector Agent installer script
-if [ $? -eq 0 ]; then
+if [ $InspectorInstallStatus -eq 0 ]; then
     rpm -qi AwsAgent
 	
 	systemctl daemon-reload
@@ -271,6 +275,8 @@ if [ $? -eq 0 ]; then
 	systemctl status -l awsagent
 
 	/opt/aws/awsagent/bin/awsagent status
+else
+	echo "Failed to execute Amazon Inspector Agent installer script"
 fi
 
 #-------------------------------------------------------------------------------

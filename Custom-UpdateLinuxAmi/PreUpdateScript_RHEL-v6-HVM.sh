@@ -124,8 +124,8 @@ InstanceType=$(curl -s "http://169.254.169.254/latest/meta-data/instance-type")
 PrivateIp=$(curl -s "http://169.254.169.254/latest/meta-data/local-ipv4")
 AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
-# IAM Role & STS Information
-if [ $(command -v jq) ]; then
+# IAM Role Information
+if [ $(compgen -ac | sort | uniq | grep jq) ]; then
     RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
@@ -224,10 +224,14 @@ status amazon-ssm-agent
 # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
 #-------------------------------------------------------------------------------
 
-curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex
+# Variable initialization
+InspectorInstallStatus="0"
+
+# Run Amazon Inspector Agent installer script
+curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex || InspectorInstallStatus=$?
 
 # Check the exit code of the Amazon Inspector Agent installer script
-if [ $? -eq 0 ]; then
+if [ $InspectorInstallStatus -eq 0 ]; then
     rpm -qi AwsAgent
 	
 	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
@@ -240,6 +244,8 @@ if [ $? -eq 0 ]; then
 	chkconfig --list awsagent
 
 	/opt/aws/awsagent/bin/awsagent status
+else
+	echo "Failed to execute Amazon Inspector Agent installer script"
 fi
 
 #-------------------------------------------------------------------------------
@@ -343,7 +349,6 @@ service ip6tables stop
 chkconfig --list ip6tables
 chkconfig ip6tables off
 chkconfig --list ip6tables
-
 
 # Disable IPv6 Kernel Module
 echo "options ipv6 disable=1" >> /etc/modprobe.d/ipv6.conf
