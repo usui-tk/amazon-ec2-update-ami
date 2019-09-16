@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-set -e -x
+# set -e -x
 
 # Logger
 exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/console) 2>&1
@@ -78,16 +78,16 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
+yum install -y acpid dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
-yum install -y setroubleshoot-server setools-console
+yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 yum install -y redhat-lsb-core redhat-support-tool
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
-yum install -y rh-python36 rh-python36-python-pip rh-python36-python-devel rh-python36-python-tools
+yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
 
 # Package Install EPEL(Extra Packages for Enterprise Linux) Repository Package
 # yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
@@ -126,7 +126,7 @@ AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
 # IAM Role Information
 if [ $(compgen -ac | sort | uniq | grep jq) ]; then
-    RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
+	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
@@ -170,6 +170,36 @@ aws configure set cli_history enabled
 # Getting AWS-CLI default Region & Output format
 aws configure list
 cat ~/.aws/config
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [AWS-CLI/Python 3]
+#-------------------------------------------------------------------------------
+
+# yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
+# yum install -y rh-python36-PyYAML rh-python36-python-docutils rh-python36-python-six
+
+# /opt/rh/rh-python36/root/usr/bin/python3 -V
+# /opt/rh/rh-python36/root/usr/bin/pip3 -V
+
+# /opt/rh/rh-python36/root/usr/bin/pip3 install awscli
+
+# /opt/rh/rh-python36/root/usr/bin/pip3 show awscli
+
+# alternatives --install "/usr/bin/aws" aws "/opt/rh/rh-python36/root/usr/bin/aws" 1
+# alternatives --display aws
+# alternatives --install "/usr/bin/aws_completer" aws_completer "/opt/rh/rh-python36/root/usr/bin/aws_completer" 1
+# alternatives --display aws_completer
+
+# cat > /etc/bash_completion.d/aws_bash_completer << __EOF__
+# # Typically that would be added under one of the following paths:
+# # - /etc/bash_completion.d
+# # - /usr/local/etc/bash_completion.d
+# # - /usr/share/bash-completion/completions
+
+# complete -C aws_completer aws
+# __EOF__
+
+# aws --version
 
 #-------------------------------------------------------------------------------
 # Custom Package Installation [AWS CloudFormation Helper Scripts]
@@ -232,7 +262,7 @@ curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -
 
 # Check the exit code of the Amazon Inspector Agent installer script
 if [ $InspectorInstallStatus -eq 0 ]; then
-    rpm -qi AwsAgent
+	rpm -qi AwsAgent
 	
 	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
 	service awsagent status
@@ -242,6 +272,8 @@ if [ $InspectorInstallStatus -eq 0 ]; then
 	chkconfig --list awsagent
 	chkconfig awsagent on
 	chkconfig --list awsagent
+
+	sleep 15
 
 	/opt/aws/awsagent/bin/awsagent status
 else
@@ -288,7 +320,6 @@ sed -i "1i# use the local instance NTP service, if available\nserver 169.254.169
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 
 # Configure NTP Client software (Start Daemon chronyd)
-service chronyd status
 service chronyd restart
 service chronyd status
 
@@ -298,9 +329,10 @@ chkconfig --list chronyd
 
 # Configure NTP Client software (Time adjustment)
 sleep 3
-
 chronyc tracking
+sleep 3
 chronyc sources -v
+sleep 3
 chronyc sourcestats -v
 
 #-------------------------------------------------------------------------------
@@ -311,7 +343,6 @@ chronyc sourcestats -v
 yum install -y tuned tuned-utils tuned-profiles-oracle
 
 # Configure Tuned software (Start Daemon tuned)
-service tuned status
 service tuned restart
 service tuned status
 
@@ -365,6 +396,12 @@ __EOF__
 sysctl -p
 
 sysctl -a | grep -ie "local_port" -ie "ipv6" | sort
+
+#-------------------------------------------------------------------------------
+# For normal termination of SSM "Run Command"
+#-------------------------------------------------------------------------------
+
+exit 0
 
 #-------------------------------------------------------------------------------
 # End of File

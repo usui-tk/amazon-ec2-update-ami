@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-set -e -x
+# set -e -x
 
 # Logger
 exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/console) 2>&1
@@ -13,6 +13,8 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #    https://www.suse.com/documentation/suse-best-practices/
 #    https://forums.suse.com/forumdisplay.php?94-Amazon-EC2
 #    
+#    https://scc.suse.com/packages/?name=SUSE%20Linux%20Enterprise%20Server&version=15.1&arch=x86_64&query=&module=
+#
 #    https://susepubliccloudinfo.suse.com/v1/amazon/images/active.json
 #    https://susepubliccloudinfo.suse.com/v1/amazon/images/active.xml
 #
@@ -48,11 +50,17 @@ zypper search > /tmp/command-log_zypper_repository-package-list.txt
 # systemd service config
 systemctl list-unit-files --no-pager -all > /tmp/command-log_systemctl_list-unit-files.txt
 
-# Default repository list [zypper command]
-zypper products > /tmp/command-log_zypper_repository-list.txt
+# Default repository products list [zypper command]
+zypper products > /tmp/command-log_zypper_repository-products-list.txt
 
-# Default repository pattern [zypper command]
-zypper search --type pattern > /tmp/command-log_zypper_repository-patterm-list.txt
+# Default repository patterns list [zypper command]
+zypper patterns > /tmp/command-log_zypper_repository-patterns-list.txt
+
+# Default repository packages list [zypper command]
+zypper packages > /tmp/command-log_zypper_repository-packages-list.txt
+
+# Determine the OS release
+eval $(grep ^VERSION_ID= /etc/os-release)
 
 #-------------------------------------------------------------------------------
 # Default Package Update
@@ -71,6 +79,58 @@ SUSEConnect --list-extensions
 # Update default package
 zypper --quiet --non-interactive update --auto-agree-with-licenses
 
+# Apply SLES Service Pack
+ZypperMigrationStatus="0"
+
+# if [ -n "$VERSION_ID" ]; then
+# 	if [ "${VERSION_ID}" = "15.2" ]; then
+# 		echo "SUSE Linux Enterprise Server 15 SP2 -> SUSE Linux Enterprise Server 15 Lastest ServicePack"
+# 		cat /etc/os-release
+# 		zypper migration --quiet --non-interactive --migration "1" --auto-agree-with-licenses --recommends --details || ZypperMigrationStatus=$?
+# 		if [ $ZypperMigrationStatus -eq 0 ]; then
+# 			echo "Successful execution [Zypper Migration Command]"
+# 			eval $(grep ^VERSION_ID= /etc/os-release)
+# 		else
+# 			echo "Failed to execute [Zypper Migration Command]"
+# 		fi
+# 		cat /etc/os-release
+
+# 	elif [ "${VERSION_ID}" = "15.1" ]; then
+# 		echo "SUSE Linux Enterprise Server 15 SP1 -> SUSE Linux Enterprise Server 15 Lastest ServicePack"
+# 		cat /etc/os-release
+# 		zypper migration --quiet --non-interactive --migration "1" --auto-agree-with-licenses --recommends --details || ZypperMigrationStatus=$?
+# 		if [ $ZypperMigrationStatus -eq 0 ]; then
+# 			echo "Successful execution [Zypper Migration Command]"
+# 			eval $(grep ^VERSION_ID= /etc/os-release)
+# 		else
+# 			echo "Failed to execute [Zypper Migration Command]"
+# 		fi
+# 		cat /etc/os-release
+
+# 	elif [ "${VERSION_ID}" = "15" ]; then
+# 		echo "SUSE Linux Enterprise Server 15 GA -> SUSE Linux Enterprise Server 15 Lastest ServicePack"
+# 		cat /etc/os-release
+# 		zypper migration --quiet --non-interactive --migration "1" --auto-agree-with-licenses --recommends --details || ZypperMigrationStatus=$?
+# 		if [ $ZypperMigrationStatus -eq 0 ]; then
+# 			echo "Successful execution [Zypper Migration Command]"
+# 			eval $(grep ^VERSION_ID= /etc/os-release)
+# 		else
+# 			echo "Failed to execute [Zypper Migration Command]"
+# 		fi
+# 		cat /etc/os-release
+
+# 	else
+# 		echo "SUSE Linux Enterprise Server 15 (Unknown)"
+# 	fi
+# fi
+
+# SUSE Linux Enterprise Server Software repository metadata Clean up
+zypper clean --all
+zypper --quiet refresh -fdb
+
+# Install recommended packages
+# zypper --quiet --non-interactive install-new-recommends
+
 #-------------------------------------------------------------------------------
 # Custom Package Installation (from SUSE Linux Enterprise Server Software repository)
 #-------------------------------------------------------------------------------
@@ -82,41 +142,114 @@ zypper --quiet --non-interactive install --type pattern apparmor
 zypper --quiet --non-interactive install --type pattern enhanced_base
 
 # Package Install SLES System Administration Tools (from SUSE Linux Enterprise Server Software repository - Select package)
-SlesForSp1Flag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES15-SP1")
-if [ $SlesForSp1Flag -gt 0 ];then
-	echo "SUSE Linux Enterprise Server 15 SP1"
-	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop jq kexec-tools kmod-bash-completion lsb-release lzop net-snmp nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
-	zypper --quiet --non-interactive install aws-efs-utils cifs-utils nfs-client nfs-utils nfs4-acl-tools yast2-nfs-client
-	zypper --quiet --non-interactive install libiscsi-utils libiscsi8 lsscsi open-iscsi sdparm sg3_utils yast2-iscsi-client
-else
-	echo "SUSE Linux Enterprise Server 15 (non SP1)" 
-	zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop kexec-tools kmod-bash-completion lsb-release lzop net-snmp nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
-	zypper --quiet --non-interactive install aws-efs-utils cifs-utils nfs-client nfs-utils nfs4-acl-tools yast2-nfs-client
-	zypper --quiet --non-interactive install libiscsi-utils libiscsi8 lsscsi open-iscsi sdparm sg3_utils yast2-iscsi-client
+zypper --quiet --non-interactive install arptables bash-completion bcc-tools cloud-netconfig-ec2 dstat ebtables git-core hdparm hostinfo iotop kexec-tools kmod-bash-completion lsb-release lzop net-snmp nmap nvme-cli sdparm seccheck supportutils supportutils-plugin-suse-public-cloud sysstat systemd-bash-completion time traceroute tuned unrar unzip zypper-log
+zypper --quiet --non-interactive install aws-efs-utils cifs-utils nfs-client nfs-utils nfs4-acl-tools yast2-nfs-client
+zypper --quiet --non-interactive install libiscsi-utils libiscsi8 lsscsi open-iscsi sdparm sg3_utils yast2-iscsi-client
+
+if [ -n "$VERSION_ID" ]; then
+	if [ "${VERSION_ID}" = "15.2" ]; then
+		echo "SUSE Linux Enterprise Server 15 SP2"
+		zypper --quiet --non-interactive install jq
+		zypper --quiet --non-interactive install pcp pcp-conf pcp-system-tools
+	elif [ "${VERSION_ID}" = "15.1" ]; then
+		echo "SUSE Linux Enterprise Server 15 SP1"
+		zypper --quiet --non-interactive install jq
+		zypper --quiet --non-interactive install pcp pcp-conf pcp-system-tools
+	elif [ "${VERSION_ID}" = "15" ]; then
+		echo "SUSE Linux Enterprise Server 15 GA"
+		zypper --quiet --non-interactive install pcp pcp-conf
+	else
+		echo "SUSE Linux Enterprise Server 15 (Unknown)"
+	fi
 fi
 
-# Package Install SLES System Administration Tools (from SUSE Linux Enterprise Server Software repository - Select package)
-SlesForSp1Flag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES15-SP1")
-if [ $SlesForSp1Flag -gt 0 ];then
-	echo "SUSE Linux Enterprise Server 15 SP1"
-	# Package Install SLES System AWS Tools (from SUSE Linux Enterprise Server Software repository)
-	#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
-	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
-	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
-	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
-	zypper --quiet --non-interactive install python3-susepubliccloudinfo
-else
-	echo "SUSE Linux Enterprise Server 15 (non SP1)" 
-	# Package Install SLES System AWS Tools (from SUSE Linux Enterprise Server Software repository)
-	#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
-	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
-	# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
-	zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+# SUSE Linux Enterprise Server Software repository metadata Clean up
+zypper clean --all
+zypper --quiet refresh -fdb
+
+# Package Install SLES System AWS Tools (from SUSE Linux Enterprise Server Software repository)
+SapFlag=0
+SapFlag=$(find /etc/zypp/repos.d/ -name "*SLE-Product-SLES_SAP15*" | wc -l)
+
+if [ -n "$VERSION_ID" ]; then
+	if [ "${VERSION_ID}" = "15.2" ]; then
+		echo "SUSE Linux Enterprise Server 15 SP2"
+		
+		zypper --quiet --non-interactive install python3-susepubliccloudinfo
+		
+		if [ $SapFlag -gt 0 ]; then
+			echo "SUSE Linux Enterprise Server for SAP Applications 15"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		else
+			echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		fi
+		
+	elif [ "${VERSION_ID}" = "15.1" ]; then
+		echo "SUSE Linux Enterprise Server 15 SP1"
+
+		zypper --quiet --non-interactive install python3-susepubliccloudinfo
+
+		if [ $SapFlag -gt 0 ]; then
+			echo "SUSE Linux Enterprise Server for SAP Applications 15"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		else
+			echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		fi
+
+	elif [ "${VERSION_ID}" = "15" ]; then
+
+		echo "SUSE Linux Enterprise Server 15 GA"
+
+		if [ $SapFlag -gt 0 ]; then
+			echo "SUSE Linux Enterprise Server for SAP Applications 15"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		else
+			echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"
+			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+			# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+		fi
+
+	else
+		echo "SUSE Linux Enterprise Server 15 (Unknown)"
+		#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
+		zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Init
+		# zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
+		zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
+	fi
 fi
 
-# Package Install SAP Utility and Tools (from SUSE Linux Enterprise Server Software repository)
-SlesForSapFlag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES_SAP15")
-if [ $SlesForSapFlag -gt 0 ];then
+# Package Install Python 3 Runtime (from SUSE Linux Enterprise Server Software repository)
+zypper --quiet --non-interactive install python3 python3-base python3-pip python3-setuptools python3-tools python3-virtualenv python3-wheel
+zypper --quiet --non-interactive install python3-Babel python3-PyJWT python3-PyYAML python3-pycrypto python3-pycurl python3-cryptography python3-python-dateutil python3-requests-aws python3-simplejson python3-six python3-urllib3
+
+# SUSE Linux Enterprise Server Software repository metadata Clean up
+zypper clean --all
+zypper --quiet refresh -fdb
+
+# Package Install SAP Utility and Tools (from SUSE Linux Enterprise Server Software repository
+SapFlag=0
+SapFlag=$(find /etc/zypp/repos.d/ -name "*SLE-Product-SLES_SAP15*" | wc -l)
+
+if [ $SapFlag -gt 0 ]; then
 	echo "SUSE Linux Enterprise Server for SAP Applications 15"
 
 	# Package Install SAP Utility and Tools (from SUSE Linux Enterprise Server Software repository - Select pattern)
@@ -127,7 +260,7 @@ if [ $SlesForSapFlag -gt 0 ];then
 	zypper --quiet --non-interactive install sapconf saptune insserv-compat
 	zypper --quiet --non-interactive install libz1-32bit libcurl4-32bit libX11-6-32bit libidn11-32bit libgcc_s1-32bit libopenssl1_0_0 glibc-32bit glibc-i18ndata glibc-locale-32bit
 else
-	echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"  
+	echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"
 fi
 
 #-------------------------------------------------------------------------------
@@ -144,7 +277,7 @@ AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
 # IAM Role Information
 if [ $(compgen -ac | sort | uniq | grep jq) ]; then
-    RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
+	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
@@ -192,10 +325,6 @@ if [ $(systemctl is-enabled amazon-ssm-agent) = "disabled" ]; then
 	systemctl is-enabled amazon-ssm-agent
 fi
 
-# systemctl restart amazon-ssm-agent
-
-# systemctl status -l amazon-ssm-agent
-
 # ssm-cli get-instance-information
 
 #-------------------------------------------------------------------------------
@@ -205,16 +334,63 @@ fi
 
 zypper --quiet --non-interactive --no-gpg-checks install "https://s3.amazonaws.com/amazoncloudwatch-agent/suse/amd64/latest/amazon-cloudwatch-agent.rpm"
 
-# Package Information 
 rpm -qi amazon-cloudwatch-agent
 
+cat /opt/aws/amazon-cloudwatch-agent/bin/CWAGENT_VERSION
+
+cat /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
+
+systemctl daemon-reload
+
+# Configure Amazon CloudWatch Agent software (Start Daemon awsagent)
+if [ $(systemctl is-enabled amazon-cloudwatch-agent) = "disabled" ]; then
+	systemctl enable amazon-cloudwatch-agent
+	systemctl is-enabled amazon-cloudwatch-agent
+fi
+
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [Amazon EC2 Rescue for Linux (ec2rl)]
+# http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Linux-Server-EC2Rescue.html
+# https://github.com/awslabs/aws-ec2rescue-linux
+#-------------------------------------------------------------------------------
+
+# Package Amazon EC2 Administration Tools (from S3 Bucket)
+curl -sS "https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz" -o "/tmp/ec2rl-bundled.tgz"
+
+mkdir -p "/opt/aws"
+
+rm -rf /opt/aws/ec2rl*
+
+tar -xzf "/tmp/ec2rl-bundled.tgz" -C "/opt/aws"
+
+mv --force /opt/aws/ec2rl* "/opt/aws/ec2rl"
+
+cat > /etc/profile.d/ec2rl.sh << __EOF__
+export PATH=\$PATH:/opt/aws/ec2rl
+__EOF__
+
+source /etc/profile.d/ec2rl.sh
+
+# Check Version
+/opt/aws/ec2rl/ec2rl version
+
+/opt/aws/ec2rl/ec2rl list
+
+# Required Software Package
+/opt/aws/ec2rl/ec2rl software-check
+
+# Diagnosis [dig modules]
+# /opt/aws/ec2rl/ec2rl run --only-modules=dig --domain=amazon.com
 
 #-------------------------------------------------------------------------------
 # Custom Package Clean up
 #-------------------------------------------------------------------------------
 zypper clean --all
 zypper --quiet refresh -fdb
+
+zypper --quiet --non-interactive update
 
 #-------------------------------------------------------------------------------
 # Configure Amazon Time Sync Service
@@ -228,6 +404,8 @@ rpm -qi chrony
 
 systemctl daemon-reload
 
+systemctl restart chronyd
+
 systemctl status -l chronyd
 
 # Configure NTP Client software (Start Daemon chronyd)
@@ -235,10 +413,6 @@ if [ $(systemctl is-enabled chronyd) = "disabled" ]; then
 	systemctl enable chronyd
 	systemctl is-enabled chronyd
 fi
-
-systemctl restart chronyd
-
-systemctl status -l chronyd
 
 # Configure NTP Client software (Configure chronyd)
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
@@ -249,9 +423,10 @@ sed -i 's/#log measurements statistics tracking/log measurements statistics trac
 systemctl restart chronyd
 
 sleep 3
-
 chronyc tracking
+sleep 3
 chronyc sources -v
+sleep 3
 chronyc sourcestats -v
 
 #-------------------------------------------------------------------------------
@@ -265,19 +440,21 @@ rpm -qi tuned
 
 systemctl daemon-reload
 
+systemctl restart tuned
+
+systemctl status -l tuned
+
 # Configure Tuned software (Start Daemon tuned)
 if [ $(systemctl is-enabled tuned) = "disabled" ]; then
 	systemctl enable tuned
 	systemctl is-enabled tuned
 fi
 
-systemctl restart tuned
-
-systemctl status -l tuned
-
 # Configure Tuned software
-SlesForSapFlag=$(find /etc/zypp/repos.d/ | grep -c "SLE-Product-SLES_SAP15")
-if [ $SlesForSapFlag -gt 0 ];then
+SapFlag=0
+SapFlag=$(find /etc/zypp/repos.d/ -name "*SLE-Product-SLES_SAP15*" | wc -l)
+
+if [ $SapFlag -gt 0 ]; then
 	echo "SUSE Linux Enterprise Server for SAP Applications 15"
 	# Configure Tuned software (select profile - sapconf)
 	tuned-adm list
@@ -298,6 +475,16 @@ fi
 # System Setting
 #-------------------------------------------------------------------------------
 
+# Update default configuration for Zypper
+ZypperFlag=0
+ZypperFlag=$(cat /etc/zypp/zypper.conf | grep -w runSearchPackages | grep -w ask | wc -l)
+
+if [ $ZypperFlag -gt 0 ]; then
+	cat /etc/zypp/zypper.conf | grep -w runSearchPackages
+	sed -i 's/# runSearchPackages = ask/runSearchPackages = never/g' /etc/zypp/zypper.conf
+	cat /etc/zypp/zypper.conf | grep -w runSearchPackages
+fi
+
 # Disable IPv6 Kernel Module
 echo "options ipv6 disable=1" >> /etc/modprobe.d/ipv6.conf
 
@@ -313,6 +500,12 @@ __EOF__
 sysctl -p
 
 sysctl -a | grep -ie "local_port" -ie "ipv6" | sort
+
+#-------------------------------------------------------------------------------
+# For normal termination of SSM "Run Command"
+#-------------------------------------------------------------------------------
+
+exit 0
 
 #-------------------------------------------------------------------------------
 # End of File

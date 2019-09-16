@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-set -e -x
+# set -e -x
 
 # Logger
 exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/console) 2>&1
@@ -67,6 +67,9 @@ yum install -y acpid arptables bash-completion bc dstat dmidecode ebtables fio g
 yum install -y amazon-efs-utils cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 
+# Package Install Python 3 Runtime (from Amazon Official Repository)
+yum install -y python3 python3-pip python3-rpm-macros python3-setuptools python3-test python3-tools python3-wheel
+
 # Package Install Amazon Linux Specific Tools (from Amazon Official Repository)
 yum install -y ec2-hibinit-agent hibagent 
 
@@ -84,7 +87,7 @@ AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
 # IAM Role Information
 if [ $(compgen -ac | sort | uniq | grep jq) ]; then
-    RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
+	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
@@ -115,20 +118,22 @@ cat ~/.aws/config
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
 # yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
-# yum localinstall -y "https://amazon-ssm-${Region}.s3.amazonaws.com/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 # yum install -y amazon-ssm-agent
 
 rpm -qi amazon-ssm-agent
+
+# systemctl daemon-reload
+
+# systemctl restart amazon-ssm-agent
+
+# systemctl status -l amazon-ssm-agent
 
 # Configure AWS Systems Manager Agent software (Start Daemon awsagent)
 if [ $(systemctl is-enabled amazon-ssm-agent) = "disabled" ]; then
 	systemctl enable amazon-ssm-agent
 	systemctl is-enabled amazon-ssm-agent
 fi
-
-# systemctl restart amazon-ssm-agent
-# systemctl status -l amazon-ssm-agent
 
 # ssm-cli get-instance-information
 
@@ -159,9 +164,7 @@ if [ $InspectorInstallStatus -eq 0 ]; then
 		systemctl is-enabled awsagent
 	fi
 
-	systemctl restart awsagent
-
-	systemctl status -l awsagent
+	sleep 15
 
 	/opt/aws/awsagent/bin/awsagent status
 else
@@ -183,7 +186,75 @@ cat /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
 
 systemctl daemon-reload
 
+# Configure Amazon CloudWatch Agent software (Start Daemon awsagent)
+if [ $(systemctl is-enabled amazon-cloudwatch-agent) = "disabled" ]; then
+	systemctl enable amazon-cloudwatch-agent
+	systemctl is-enabled amazon-cloudwatch-agent
+fi
+
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [Amazon EC2 Rescue for Linux (ec2rl)]
+# http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Linux-Server-EC2Rescue.html
+# https://github.com/awslabs/aws-ec2rescue-linux
+#-------------------------------------------------------------------------------
+
+# Package Amazon EC2 Administration Tools (from S3 Bucket)
+curl -sS "https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz" -o "/tmp/ec2rl-bundled.tgz"
+
+mkdir -p "/opt/aws"
+
+rm -rf /opt/aws/ec2rl*
+
+tar -xzf "/tmp/ec2rl-bundled.tgz" -C "/opt/aws"
+
+mv --force /opt/aws/ec2rl* "/opt/aws/ec2rl"
+
+cat > /etc/profile.d/ec2rl.sh << __EOF__
+export PATH=\$PATH:/opt/aws/ec2rl
+__EOF__
+
+source /etc/profile.d/ec2rl.sh
+
+# Check Version
+/opt/aws/ec2rl/ec2rl version
+
+/opt/aws/ec2rl/ec2rl list
+
+# Required Software Package
+/opt/aws/ec2rl/ec2rl software-check
+
+# Diagnosis [dig modules]
+# /opt/aws/ec2rl/ec2rl run --only-modules=dig --domain=amazon.com
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [vim]
+#-------------------------------------------------------------------------------
+
+# Package Install Amazon Linux System Administration Tools (from Extras Library Repository)
+amazon-linux-extras list
+
+amazon-linux-extras install -y vim
+
+amazon-linux-extras list
+
+# Package Information [vim]
+rpm -qi vim-common
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [BCC]
+#-------------------------------------------------------------------------------
+
+# Package Install Amazon Linux System Administration Tools (from Extras Library Repository)
+amazon-linux-extras list
+
+amazon-linux-extras install -y BCC
+
+amazon-linux-extras list
+
+# Package Information [bcc]
+rpm -qi bcc
 
 #-------------------------------------------------------------------------------
 # Custom Package Clean up
@@ -223,9 +294,10 @@ sed -i 's/#log measurements statistics tracking/log measurements statistics trac
 systemctl restart chronyd
 
 sleep 3
-
 chronyc tracking
+sleep 3
 chronyc sources -v
+sleep 3
 chronyc sourcestats -v
 
 #-------------------------------------------------------------------------------
@@ -284,6 +356,12 @@ __EOF__
 sysctl -p
 
 sysctl -a | grep -ie "local_port" -ie "ipv6" | sort
+
+#-------------------------------------------------------------------------------
+# For normal termination of SSM "Run Command"
+#-------------------------------------------------------------------------------
+
+exit 0
 
 #-------------------------------------------------------------------------------
 # End of File

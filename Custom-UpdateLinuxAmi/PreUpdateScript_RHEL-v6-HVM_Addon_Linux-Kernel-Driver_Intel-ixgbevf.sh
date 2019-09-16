@@ -35,9 +35,9 @@ InstanceType=$(curl -s "http://169.254.169.254/latest/meta-data/instance-type")
 PrivateIp=$(curl -s "http://169.254.169.254/latest/meta-data/local-ipv4")
 AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
-# IAM Role & STS Information
-if [ $(command -v jq) ]; then
-    RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
+# IAM Role Information
+if [ $(compgen -ac | sort | uniq | grep jq) ]; then
+	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
@@ -57,9 +57,9 @@ yum --enablerepo=epel install -y dkms
 
 # Set Grub2 Parameter for RHEL v7.x/CentOS v7.x
 if [ $(command -v grub2-mkconfig) ]; then
-    rpm -qa | grep -e '^systemd-[0-9]\+\|^udev-[0-9]\+'
-    sed -i '/^GRUB_CMDLINE_LINUX/s/"$/ net.ifnames=0"/' /etc/default/grub
-    grub2-mkconfig -o /boot/grub2/grub.cfg
+	rpm -qa | grep -e '^systemd-[0-9]\+\|^udev-[0-9]\+'
+	sed -i '/^GRUB_CMDLINE_LINUX/s/"$/ net.ifnames=0"/' /etc/default/grub
+	grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 # Get Intel Ethernet Driver source code
@@ -122,5 +122,15 @@ fi
 #-------------------------------------------------------------------------------
 
 if [ -f /etc/udev/rules.d/70-persistent-net.rules ]; then
-    rm -fr /etc/udev/rules.d/70-persistent-net.rules
+	rm -fr /etc/udev/rules.d/70-persistent-net.rules
 fi
+
+#-------------------------------------------------------------------------------
+# For normal termination of SSM "Run Command"
+#-------------------------------------------------------------------------------
+
+exit 0
+
+#-------------------------------------------------------------------------------
+# End of File
+#-------------------------------------------------------------------------------

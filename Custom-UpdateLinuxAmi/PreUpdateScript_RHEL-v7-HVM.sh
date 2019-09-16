@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-set -e -x
+# set -e -x
 
 # Logger
 exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/console) 2>&1
@@ -67,7 +67,7 @@ yum-config-manager --enable rhui-REGION-client-config-server-7
 yum-config-manager --enable rhui-REGION-rhel-server-extras
 yum-config-manager --enable rhui-REGION-rhel-server-optional
 yum-config-manager --enable rhui-REGION-rhel-server-supplementary
-# yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+yum-config-manager --enable rhui-REGION-rhel-server-rhscl
 
 # yum repository metadata Clean up
 yum clean all
@@ -80,10 +80,10 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget zip
+yum install -y acpid arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget zip
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi sdparm sg3_utils
-yum install -y setroubleshoot-server setools-console
+yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 yum install -y redhat-lsb-core redhat-support-tool
@@ -92,7 +92,7 @@ yum install -y redhat-lsb-core redhat-support-tool
 yum install -y kpatch
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
-yum install -y python3 python3-pip python3-devel
+yum install -y python3 python3-pip python3-rpm-generators python3-rpm-macros python3-setuptools python3-test python3-wheel
 
 # Package Install Device driver compatible with Amazon EC2 (from Red Hat Official Repository)
 # - Additional kernel modules up to RHEL v7.6 (not required from RHEL v7.7)
@@ -135,7 +135,7 @@ AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
 # IAM Role Information
 if [ $(compgen -ac | sort | uniq | grep jq) ]; then
-    RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
+	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
 
@@ -170,7 +170,7 @@ aws --version
 aws configure << __EOF__ 
 
 
-
+${Region}
 json
 
 __EOF__
@@ -189,31 +189,53 @@ cat ~/.aws/config
 #-------------------------------------------------------------------------------
 # yum --enablerepo=epel localinstall -y https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm
 
-yum --enablerepo=epel install -y python2-pip
-pip install --upgrade pip
+yum install -y python-setuptools
 
-pip install pystache
-pip install argparse
-pip install python-daemon
-pip install requests
+easy_install --script-dir "/opt/aws/bin" https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
 
-curl -sS "https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz" -o "/tmp/aws-cfn-bootstrap-latest.tar.gz"
-tar -pxzf "/tmp/aws-cfn-bootstrap-latest.tar.gz" -C /tmp
+mkdir -m 755 -p /etc/cfn/hooks.d
 
-cd /tmp/aws-cfn-bootstrap-1.4/
-python setup.py build
-python setup.py install
+# cfn-hup.conf Configuration File
+cat > /etc/cfn/cfn-hup.conf << __EOF__
+[main]
+stack=
+__EOF__
 
-chmod 775 /usr/init/redhat/cfn-hup
+# cfn-auto-reloader.conf Configuration File
+cat > /etc/cfn/hooks.d/cfn-auto-reloader.conf << __EOF__
+[hookname]
+triggers=post.update
+path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
+action=
+runas=root
+__EOF__
 
-if [ -L /etc/init.d/cfn-hup ]; then
-	echo "Symbolic link exists"
-else
-	echo "No symbolic link exists"
-	ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup
+# cfn-hup.service Configuration File
+cat > /lib/systemd/system/cfn-hup.service << __EOF__
+[Unit]
+Description=cfn-hup daemon
+
+[Service]
+Type=simple
+ExecStart=/opt/aws/bin/cfn-hup
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+__EOF__
+
+# Execute AWS CloudFormation Helper software
+systemctl daemon-reload
+
+systemctl restart cfn-hup
+
+systemctl status -l cfn-hup
+
+# Configure AWS CloudFormation Helper software (Start Daemon awsagent)
+if [ $(systemctl is-enabled cfn-hup) = "disabled" ]; then
+	systemctl enable cfn-hup
+	systemctl is-enabled cfn-hup
 fi
-
-cd /tmp
 
 #-------------------------------------------------------------------------------
 # Custom Package Installation [AWS Systems Manager agent (aka SSM agent)]
@@ -237,10 +259,6 @@ if [ $(systemctl is-enabled amazon-ssm-agent) = "disabled" ]; then
 	systemctl is-enabled amazon-ssm-agent
 fi
 
-# systemctl restart amazon-ssm-agent
-
-# systemctl status -l amazon-ssm-agent
-
 # ssm-cli get-instance-information
 
 #-------------------------------------------------------------------------------
@@ -256,7 +274,7 @@ curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -
 
 # Check the exit code of the Amazon Inspector Agent installer script
 if [ $InspectorInstallStatus -eq 0 ]; then
-    rpm -qi AwsAgent
+	rpm -qi AwsAgent
 	
 	systemctl daemon-reload
 
@@ -270,9 +288,7 @@ if [ $InspectorInstallStatus -eq 0 ]; then
 		systemctl is-enabled awsagent
 	fi
 
-	systemctl restart awsagent
-
-	systemctl status -l awsagent
+	sleep 15
 
 	/opt/aws/awsagent/bin/awsagent status
 else
@@ -286,10 +302,55 @@ fi
 
 yum localinstall -y "https://s3.amazonaws.com/amazoncloudwatch-agent/redhat/amd64/latest/amazon-cloudwatch-agent.rpm"
 
-# Package Information 
 rpm -qi amazon-cloudwatch-agent
 
+cat /opt/aws/amazon-cloudwatch-agent/bin/CWAGENT_VERSION
+
+cat /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
+
+systemctl daemon-reload
+
+# Configure Amazon CloudWatch Agent software (Start Daemon awsagent)
+if [ $(systemctl is-enabled amazon-cloudwatch-agent) = "disabled" ]; then
+	systemctl enable amazon-cloudwatch-agent
+	systemctl is-enabled amazon-cloudwatch-agent
+fi
+
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [Amazon EC2 Rescue for Linux (ec2rl)]
+# http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Linux-Server-EC2Rescue.html
+# https://github.com/awslabs/aws-ec2rescue-linux
+#-------------------------------------------------------------------------------
+
+# Package Amazon EC2 Administration Tools (from S3 Bucket)
+curl -sS "https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz" -o "/tmp/ec2rl-bundled.tgz"
+
+mkdir -p "/opt/aws"
+
+rm -rf /opt/aws/ec2rl*
+
+tar -xzf "/tmp/ec2rl-bundled.tgz" -C "/opt/aws"
+
+mv --force /opt/aws/ec2rl* "/opt/aws/ec2rl"
+
+cat > /etc/profile.d/ec2rl.sh << __EOF__
+export PATH=\$PATH:/opt/aws/ec2rl
+__EOF__
+
+source /etc/profile.d/ec2rl.sh
+
+# Check Version
+/opt/aws/ec2rl/ec2rl version
+
+/opt/aws/ec2rl/ec2rl list
+
+# Required Software Package
+/opt/aws/ec2rl/ec2rl software-check
+
+# Diagnosis [dig modules]
+# /opt/aws/ec2rl/ec2rl run --only-modules=dig --domain=amazon.com
 
 #-------------------------------------------------------------------------------
 # Custom Package Clean up
@@ -308,6 +369,8 @@ rpm -qi chrony
 
 systemctl daemon-reload
 
+systemctl restart chronyd
+
 systemctl status -l chronyd
 
 # Configure NTP Client software (Start Daemon chronyd)
@@ -315,10 +378,6 @@ if [ $(systemctl is-enabled chronyd) = "disabled" ]; then
 	systemctl enable chronyd
 	systemctl is-enabled chronyd
 fi
-
-systemctl restart chronyd
-
-systemctl status -l chronyd
 
 # Configure NTP Client software (Configure chronyd)
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
@@ -333,9 +392,10 @@ cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 systemctl restart chronyd
 
 sleep 3
-
 chronyc tracking
+sleep 3
 chronyc sources -v
+sleep 3
 chronyc sourcestats -v
 
 #-------------------------------------------------------------------------------
@@ -347,17 +407,15 @@ yum install -y tuned tuned-utils tuned-profiles-oracle
 
 rpm -qi tuned
 
-systemctl daemon-reload
+systemctl restart tuned
+
+systemctl status -l tuned
 
 # Configure Tuned software (Start Daemon tuned)
 if [ $(systemctl is-enabled tuned) = "disabled" ]; then
 	systemctl enable tuned
 	systemctl is-enabled tuned
 fi
-
-systemctl restart tuned
-
-systemctl status -l tuned
 
 # Configure Tuned software (select profile - throughput-performance)
 tuned-adm list
@@ -394,6 +452,12 @@ __EOF__
 sysctl -p
 
 sysctl -a | grep -ie "local_port" -ie "ipv6" | sort
+
+#-------------------------------------------------------------------------------
+# For normal termination of SSM "Run Command"
+#-------------------------------------------------------------------------------
+
+exit 0
 
 #-------------------------------------------------------------------------------
 # End of File
