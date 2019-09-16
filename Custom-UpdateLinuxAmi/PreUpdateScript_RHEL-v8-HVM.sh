@@ -7,15 +7,13 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 
 #-------------------------------------------------------------------------------
 # Acquire unique information of Linux distribution
-#  - RHEL v7
+#  - RHEL v8
 #    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/
 #    https://access.redhat.com/support/policy/updates/extras
 #    https://access.redhat.com/articles/1150793
 #    https://access.redhat.com/solutions/3358
 #
 #    https://access.redhat.com/articles/3135121
-#
-#    https://aws.amazon.com/marketplace/pp/B00KWBZVK6
 #
 #-------------------------------------------------------------------------------
 
@@ -35,91 +33,98 @@ cat /etc/redhat-release
 # Default installation package [rpm command]
 rpm -qa --qf="%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n" | sort > /tmp/command-log_rpm_installed-package.txt
 
-# Default installation package [yum command]
-yum list installed > /tmp/command-log_yum_installed-package.txt
+# Default installation package [dnf command]
+dnf list installed > /tmp/command-log_dnf_installed-package.txt
 
-# Default repository package [yum command]
-yum list all > /tmp/command-log_yum_repository-package-list.txt
+# Default repository package [dnf command]
+dnf list all > /tmp/command-log_dnf_repository-package-list.txt
 
 # systemd service config
 systemctl list-unit-files --no-pager -all > /tmp/command-log_systemctl_list-unit-files.txt
 
-# Default repository list [yum command]
-yum repolist all > /tmp/command-log_yum_repository-list.txt
+# Default repository list [dnf command]
+dnf repolist all > /tmp/command-log_dnf_repository-list.txt
+
+# Default repository module [dnf command]
+dnf module list > /tmp/command-log_dnf_module-list.txt
 
 #-------------------------------------------------------------------------------
 # Default Package Update
 #-------------------------------------------------------------------------------
 
 # Red Hat Update Infrastructure Client Package Update
-yum clean all
-yum update -y rh-amazon-rhui-client
+dnf clean all
+dnf update -y rh-amazon-rhui-client
+dnf update -y dnf dnf-data dnf-utils
 
 # Checking repository information
-yum repolist all
+dnf repolist all
+dnf module list
 
 # Enable Channnel (RHEL Server RPM) - [Default Enable]
-yum-config-manager --enable rhui-REGION-rhel-server-releases
-yum-config-manager --enable rhui-REGION-rhel-server-rh-common
-yum-config-manager --enable rhui-REGION-client-config-server-7
+dnf config-manager --enable rhel-8-baseos-rhui-rpms
+dnf config-manager --enable rhel-8-appstream-rhui-rpms
+dnf config-manager --enable rhui-client-config-server-8
 
 # Enable Channnel (RHEL Server RPM) - [Default Disable]
-yum-config-manager --enable rhui-REGION-rhel-server-extras
-yum-config-manager --enable rhui-REGION-rhel-server-optional
-yum-config-manager --enable rhui-REGION-rhel-server-supplementary
-yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+# dnf config-manager --enable rhel-8-supplementary-rhui-rpms
+# dnf config-manager --enable rhui-codeready-builder-for-rhel-8-rhui-rpms
 
-# yum repository metadata Clean up
-yum clean all
+# Cleanup repository information
+dnf clean all
+dnf makecache
 
 # Default Package Update
-yum update -y
+dnf update -y
 
 #-------------------------------------------------------------------------------
 # Custom Package Installation
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y acpid arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget zip
-yum install -y cifs-utils nfs-utils nfs4-acl-tools
-yum install -y iscsi-initiator-utils lsscsi sdparm sg3_utils
-yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
+dnf install -y acpid arptables bash-completion bc bcc-tools bind-utils crypto-policies curl dstat ebtables ethtool fio gdisk git hdparm jq kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nftables nmap nvme-cli numactl smartmontools sos strace sysstat tcpdump tlog tree traceroute unzip vim-enhanced wget zip zsh
+dnf install -y cifs-utils nfs-utils nfs4-acl-tools
+dnf install -y iscsi-initiator-utils lsscsi sg3_utils
+dnf install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
+dnf install -y pcp pcp-zeroconf pcp-system-tools pcp-export-pcp2json pcp-selinux
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
-yum install -y redhat-lsb-core redhat-support-tool
-
-# Package Install Red Hat Enterprise Linux kernel live-patching tools (from Red Hat Official Repository)
-yum install -y kpatch
+dnf install -y redhat-lsb-core redhat-support-tool
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
-yum install -y python3 python3-pip python3-rpm-generators python3-rpm-macros python3-setuptools python3-test python3-wheel
+dnf install -y @python36
+dnf install -y python3 python3-pip python3-rpm-generators python3-rpm-macros python3-setuptools python3-test python3-wheel
 
-# Package Install Device driver compatible with Amazon EC2 (from Red Hat Official Repository)
-# - Additional kernel modules up to RHEL v7.6 (not required from RHEL v7.7)
-# yum install -y kmod-redhat-ena
+# Package Install Red Hat Enterprise Linux Web-Based support tools (from Red Hat Official Repository)
+# dnf install -y cockpit cockpit-dashboard cockpit-packagekit cockpit-session-recording cockpit-storaged cockpit-system cockpit-ws
 
 # Package Install EPEL(Extra Packages for Enterprise Linux) Repository Package
-# yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# dnf localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
 cat > /etc/yum.repos.d/epel-bootstrap.repo << __EOF__
 [epel]
-name=Bootstrap EPEL
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=\$basearch
+name=Extra Packages for Enterprise Linux \$releasever - \$basearch
+#baseurl=https://download.fedoraproject.org/pub/epel/\$releasever/Everything/\$basearch
+metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-\$releasever&arch=\$basearch&infra=\$infra&content=\$contentdir
 failovermethod=priority
 enabled=0
 gpgcheck=0
 __EOF__
 
-yum --enablerepo=epel -y install epel-release
+dnf --enablerepo=epel -y install epel-release
 rm -f /etc/yum.repos.d/epel-bootstrap.repo
 
+egrep '^\[|enabled' /etc/yum.repos.d/epel*
 sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
-# yum-config-manager --disable epel epel-debuginfo epel-source
+sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel-*.repo
+# dnf config-manager --disable epel epel-debuginfo epel-source
+egrep '^\[|enabled' /etc/yum.repos.d/epel*
 
-yum clean all
+dnf clean all
 
-# Package Install RHEL System Administration Tools (from EPEL Repository)
-yum --enablerepo=epel install -y atop collectl jq zstd
+# # Package Install RHEL System Administration Tools (from EPEL Repository)
+dnf --enablerepo=epel install -y iftop
+# dnf --enablerepo=epel install -y atop collectl
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData
@@ -143,10 +148,19 @@ fi
 # Custom Package Installation [AWS-CLI]
 #-------------------------------------------------------------------------------
 
-# Package Install AWS-CLI Tools (from Python Package Index (PyPI) Repository)
-# yum install -y python3 python3-pip python3-devel
-python3 --version
+# Python package introduction and setting
+dnf module list | grep python
+dnf install -y @python36
+dnf install -y python3-asn1crypto python3-dateutil python3-docutils python3-humanize python3-jmespath python3-pip python3-pyasn1 python3-pyasn1-modules python3-pyyaml python3-six python3-urllib3
+dnf module list | grep python
 
+alternatives --list
+alternatives --set python "/usr/bin/python3"
+alternatives --list
+which python
+python --version
+
+# Package Install AWS-CLI Tools (from Python Package Index (PyPI) Repository)
 pip3 install awscli
 pip3 show awscli
 
@@ -183,67 +197,12 @@ aws configure list
 cat ~/.aws/config
 
 #-------------------------------------------------------------------------------
-# Custom Package Installation [AWS CloudFormation Helper Scripts]
-# https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/cfn-helper-scripts-reference.html
-# https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/releasehistory-aws-cfn-bootstrap.html
-#-------------------------------------------------------------------------------
-# yum --enablerepo=epel localinstall -y https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm
-
-yum install -y python-setuptools
-
-easy_install --script-dir "/opt/aws/bin" https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
-
-mkdir -m 755 -p /etc/cfn/hooks.d
-
-# cfn-hup.conf Configuration File
-cat > /etc/cfn/cfn-hup.conf << __EOF__
-[main]
-stack=
-__EOF__
-
-# cfn-auto-reloader.conf Configuration File
-cat > /etc/cfn/hooks.d/cfn-auto-reloader.conf << __EOF__
-[hookname]
-triggers=post.update
-path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
-action=
-runas=root
-__EOF__
-
-# cfn-hup.service Configuration File
-cat > /lib/systemd/system/cfn-hup.service << __EOF__
-[Unit]
-Description=cfn-hup daemon
-
-[Service]
-Type=simple
-ExecStart=/opt/aws/bin/cfn-hup
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-__EOF__
-
-# Execute AWS CloudFormation Helper software
-systemctl daemon-reload
-
-systemctl restart cfn-hup
-
-systemctl status -l cfn-hup
-
-# Configure AWS CloudFormation Helper software (Start Daemon awsagent)
-if [ $(systemctl is-enabled cfn-hup) = "disabled" ]; then
-	systemctl enable cfn-hup
-	systemctl is-enabled cfn-hup
-fi
-
-#-------------------------------------------------------------------------------
 # Custom Package Installation [AWS Systems Manager agent (aka SSM agent)]
 # http://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/sysman-install-ssm-agent.html
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
 
-# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
+# dnf localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 rpm -qi amazon-ssm-agent
 
@@ -266,34 +225,34 @@ fi
 # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
 #-------------------------------------------------------------------------------
 
-# Variable initialization
-InspectorInstallStatus="0"
+# # Variable initialization
+# InspectorInstallStatus="0"
 
-# Run Amazon Inspector Agent installer script
-curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex || InspectorInstallStatus=$?
+# # Run Amazon Inspector Agent installer script
+# curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -ex || InspectorInstallStatus=$?
 
-# Check the exit code of the Amazon Inspector Agent installer script
-if [ $InspectorInstallStatus -eq 0 ]; then
-	rpm -qi AwsAgent
+# # Check the exit code of the Amazon Inspector Agent installer script
+# if [ $InspectorInstallStatus -eq 0 ]; then
+# 	rpm -qi AwsAgent
 	
-	systemctl daemon-reload
+# 	systemctl daemon-reload
 
-	systemctl restart awsagent
+# 	systemctl restart awsagent
 
-	systemctl status -l awsagent
+# 	systemctl status -l awsagent
 
-	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
-	if [ $(systemctl is-enabled awsagent) = "disabled" ]; then
-		systemctl enable awsagent
-		systemctl is-enabled awsagent
-	fi
+# 	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
+# 	if [ $(systemctl is-enabled awsagent) = "disabled" ]; then
+# 		systemctl enable awsagent
+# 		systemctl is-enabled awsagent
+# 	fi
 
-	sleep 15
+#	sleep 15
 
-	/opt/aws/awsagent/bin/awsagent status
-else
-	echo "Failed to execute Amazon Inspector Agent installer script"
-fi
+# 	/opt/aws/awsagent/bin/awsagent status
+# else
+# 	echo "Failed to execute Amazon Inspector Agent installer script"
+# fi
 
 #-------------------------------------------------------------------------------
 # Custom Package Install [Amazon CloudWatch Agent]
@@ -355,7 +314,7 @@ source /etc/profile.d/ec2rl.sh
 #-------------------------------------------------------------------------------
 # Custom Package Clean up
 #-------------------------------------------------------------------------------
-yum clean all
+dnf clean all
 
 #-------------------------------------------------------------------------------
 # Configure Amazon Time Sync Service
@@ -363,7 +322,7 @@ yum clean all
 #-------------------------------------------------------------------------------
 
 # Configure NTP Client software (Install chrony Package)
-yum install -y chrony
+dnf install -y chrony
 
 rpm -qi chrony
 
@@ -383,8 +342,7 @@ fi
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 
 sed -i 's/#log measurements statistics tracking/log measurements statistics tracking/g' /etc/chrony.conf
-
-sed -i "1i# use the local instance NTP service, if available\nserver 169.254.169.123 prefer iburst\n" /etc/chrony.conf
+sed -i "/pool 2.rhel.pool.ntp.org iburst/a server 169.254.169.123 prefer iburst" /etc/chrony.conf
 
 cat /etc/chrony.conf | grep -ie "169.254.169.123" -ie "pool" -ie "server"
 
@@ -407,6 +365,8 @@ yum install -y tuned tuned-utils tuned-profiles-oracle
 
 rpm -qi tuned
 
+systemctl daemon-reload
+
 systemctl restart tuned
 
 systemctl status -l tuned
@@ -423,6 +383,27 @@ tuned-adm list
 tuned-adm active
 tuned-adm profile throughput-performance 
 tuned-adm active
+
+#-------------------------------------------------------------------------------
+# Configure ACPI daemon (Advanced Configuration and Power Interface)
+#-------------------------------------------------------------------------------
+
+# Configure ACPI daemon software (Install acpid Package)
+yum install -y acpid
+
+rpm -qi acpid
+
+systemctl daemon-reload
+
+systemctl restart acpid
+
+systemctl status -l acpid
+
+# Configure NTP Client software (Start Daemon chronyd)
+if [ $(systemctl is-enabled acpid) = "disabled" ]; then
+	systemctl enable acpid
+	systemctl is-enabled acpid
+fi
 
 #-------------------------------------------------------------------------------
 # System Setting
