@@ -361,7 +361,7 @@ chronyc sourcestats -v
 #-------------------------------------------------------------------------------
 
 # Package Install Tuned (from Red Hat Official Repository)
-yum install -y tuned tuned-utils tuned-profiles-oracle
+dnf install -y tuned tuned-utils tuned-profiles-oracle
 
 rpm -qi tuned
 
@@ -389,7 +389,7 @@ tuned-adm active
 #-------------------------------------------------------------------------------
 
 # Configure ACPI daemon software (Install acpid Package)
-yum install -y acpid
+dnf install -y acpid
 
 rpm -qi acpid
 
