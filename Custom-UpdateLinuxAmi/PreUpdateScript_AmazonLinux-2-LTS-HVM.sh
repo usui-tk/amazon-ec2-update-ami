@@ -18,6 +18,9 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html
 #-------------------------------------------------------------------------------
 
+# Cleanup repository information
+yum clean all
+
 # Show Linux Distribution/Distro information
 if [ $(command -v lsb_release) ]; then
     lsb_release -a
@@ -42,11 +45,14 @@ yum list installed > /tmp/command-log_yum_installed-package.txt
 # Default repository package [yum command]
 yum list all > /tmp/command-log_yum_repository-package-list.txt
 
+# Default repository package group [yum command]
+yum groups list -v > /tmp/command-log_yum_repository-package-group-list.txt
+
 # Special package information
 amazon-linux-extras list
 
 # systemd service config
-systemctl list-unit-files --no-pager -all > /tmp/command-log_systemctl_list-unit-files.txt
+systemctl list-unit-files --all --no-pager > /tmp/command-log_systemctl_list-unit-files.txt
 
 #-------------------------------------------------------------------------------
 # Default Package Update
@@ -63,7 +69,7 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install Amazon Linux System Administration Tools (from Amazon Official Repository)
-yum install -y acpid arptables bash-completion bc dstat dmidecode ebtables fio gdisk git hdparm jq kexec-tools lsof lzop iperf3 iotop mlocate mtr nc net-snmp-utils nmap nvme-cli numactl perf rsync strace sysstat system-lsb-core tcpdump traceroute tree uuid vim-enhanced yum-plugin-versionlock yum-utils wget zstd
+yum install -y acpid arptables bash-completion bc dstat dmidecode ebtables fio gdisk git hdparm jq kexec-tools lsof lzop iperf3 iotop mlocate mtr nc net-snmp-utils nmap nvme-cli numactl perf psmisc rsync strace sysstat system-lsb-core tcpdump traceroute tree uuid vim-enhanced yum-plugin-versionlock yum-utils wget zstd
 yum install -y amazon-efs-utils cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 
@@ -117,9 +123,8 @@ cat ~/.aws/config
 # http://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/sysman-install-ssm-agent.html
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
-# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
-# yum install -y amazon-ssm-agent
+# yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 rpm -qi amazon-ssm-agent
 
@@ -176,7 +181,7 @@ fi
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 #-------------------------------------------------------------------------------
 
-yum localinstall -y "https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
+yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
 rpm -qi amazon-cloudwatch-agent
 

@@ -19,6 +19,9 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #
 #-------------------------------------------------------------------------------
 
+# Cleanup repository information
+yum clean all
+
 # Show Linux Distribution/Distro information
 if [ $(command -v lsb_release) ]; then
     lsb_release -a
@@ -41,8 +44,11 @@ yum list installed > /tmp/command-log_yum_installed-package.txt
 # Default repository package [yum command]
 yum list all > /tmp/command-log_yum_repository-package-list.txt
 
+# Default repository package group [yum command]
+yum groups list -v > /tmp/command-log_yum_repository-package-group-list.txt
+
 # systemd service config
-systemctl list-unit-files --no-pager -all > /tmp/command-log_systemctl_list-unit-files.txt
+systemctl list-unit-files --all --no-pager > /tmp/command-log_systemctl_list-unit-files.txt
 
 # Default repository list [yum command]
 yum repolist all > /tmp/command-log_yum_repository-list.txt
@@ -80,7 +86,7 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y acpid arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget zip
+yum install -y acpid arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl psmisc rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced xfsdump xfsprogs yum-priorities yum-plugin-versionlock yum-utils wget zip
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi sdparm sg3_utils
 yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
@@ -243,7 +249,7 @@ fi
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
 
-# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
+# yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 rpm -qi amazon-ssm-agent
 
@@ -300,7 +306,7 @@ fi
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 #-------------------------------------------------------------------------------
 
-yum localinstall -y "https://s3.amazonaws.com/amazoncloudwatch-agent/redhat/amd64/latest/amazon-cloudwatch-agent.rpm"
+yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/amazoncloudwatch-agent/redhat/amd64/latest/amazon-cloudwatch-agent.rpm"
 
 rpm -qi amazon-cloudwatch-agent
 

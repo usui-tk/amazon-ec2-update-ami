@@ -20,17 +20,24 @@ if [ -f /etc/os-release ]; then
 fi
 
 #-------------------------------------------------------------------------------
-# Cleanup process for Package
+# Cleanup process for old kernel Package
 #-------------------------------------------------------------------------------
 
 # Removing old kernel packages (Use dnf commands)
 if [ $(command -v dnf) ]; then
+	# Removing old kernel packages
 	echo "Target operating system"
 	uname -r
 	dnf --showduplicate list kernel
 	dnf remove -y $(dnf repoquery --installonly --latest-limit=-1 -q)
 	sleep 5
 	dnf --showduplicate list kernel
+	# Reconfigure GRUB 2 config file
+	if [ $(command -v grub2-mkconfig) ]; then
+		grub2-mkconfig -o $(find /boot | grep -w grub.cfg)
+	fi
+	# Cleanup repository information
+	dnf clean all
 fi
 
 # Removing old kernel packages (Use yum/package-cleanup commands)
@@ -39,13 +46,62 @@ if [ $(command -v yum) ]; then
 		if [ $(command -v dnf) ]; then
 			echo "Excluded operating systems"
 		else
+			# Removing old kernel packages
 			echo "Target operating system"
 			uname -r
 			yum --showduplicate list kernel
 			package-cleanup --oldkernels --count="1" -y
 			sleep 5
 			yum --showduplicate list kernel
+			# Reconfigure GRUB 2 config file
+			if [ $(command -v grub2-mkconfig) ]; then
+				grub2-mkconfig -o $(find /boot | grep -w grub.cfg)
+			fi
+			# Cleanup repository information
+			yum clean all
 		fi
+	fi
+fi
+
+# Removing old kernel packages (Use zypper/purge-kernels commands)
+if [ $(command -v zypper) ]; then
+	if [ $(command -v purge-kernels) ]; then
+		# Removing old kernel packages
+		echo "Target operating system"
+		uname -r
+		rpm -qa | grep kernel | sort
+		cat /etc/zypp/zypp.conf | grep multiversion.kernels
+		purge-kernels
+		sleep 5
+		rpm -qa | grep kernel | sort
+		# Reconfigure GRUB 2 config file
+		if [ $(command -v grub2-mkconfig) ]; then
+			grub2-mkconfig -o $(find /boot | grep -w grub.cfg)
+		fi
+		# Cleanup repository information
+		zypper clean --all
+	fi
+fi
+
+# Removing old kernel packages (Use apt-get/purge-old-kernels commands)
+if [ $(command -v apt-get) ]; then
+	if [ $(command -v purge-old-kernels) ]; then
+		# Removing old kernel packages
+		echo "Target operating system"
+		uname -r
+		dpkg --get-selections | grep linux-image
+
+		purge-old-kernels
+		# purge-old-kernels --keep 1 -qy
+		
+		sleep 5
+		dpkg --get-selections | grep linux-image
+		# Reconfigure GRUB 2 config file
+		if [ $(command -v update-grub) ]; then
+			update-grub
+		fi
+		# Cleanup repository information
+		apt-get clean
 	fi
 fi
 
@@ -127,7 +183,7 @@ unset HISTFILE
 [ -f /home/ssm-user/.bash_history ] && rm -rf /home/ssm-user/.bash_history
 
 # Waiting time
-sleep 15
+sleep 30
 
 #-------------------------------------------------------------------------------
 # For normal termination of SSM "Run Command"

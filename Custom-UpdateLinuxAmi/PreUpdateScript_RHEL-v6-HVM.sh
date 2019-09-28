@@ -19,6 +19,9 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #
 #-------------------------------------------------------------------------------
 
+# Cleanup repository information
+yum clean all
+
 # Show Linux Distribution/Distro information
 if [ $(command -v lsb_release) ]; then
     lsb_release -a
@@ -38,6 +41,9 @@ yum list installed > /tmp/command-log_yum_installed-package.txt
 
 # Default repository package [yum command]
 yum list all > /tmp/command-log_yum_repository-package-list.txt
+
+# Default repository package group [yum command]
+yum grouplist -v > /tmp/command-log_yum_repository-package-group-list.txt
 
 # upstartd service config [chkconfig command]
 chkconfig --list > /tmp/command-log_chkconfig_list.txt
@@ -78,7 +84,7 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y acpid dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
+yum install -y acpid dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf psmisc rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
@@ -239,7 +245,7 @@ cd /tmp
 # https://github.com/aws/amazon-ssm-agent
 #-------------------------------------------------------------------------------
 
-# yum localinstall -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
+# yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 rpm -qi amazon-ssm-agent
 
@@ -285,7 +291,7 @@ fi
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 #-------------------------------------------------------------------------------
 
-yum localinstall -y "https://s3.amazonaws.com/amazoncloudwatch-agent/redhat/amd64/latest/amazon-cloudwatch-agent.rpm"
+yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
 # Package Information 
 rpm -qi amazon-cloudwatch-agent
@@ -303,8 +309,11 @@ yum clean all
 #-------------------------------------------------------------------------------
 
 # Replace NTP Client software (Uninstall ntpd Package)
-chkconfig --list ntpd
-service ntpd stop
+if [ $(chkconfig --list | awk '{print $1}' | grep -w ntpd) ]; then
+	chkconfig --list ntpd
+	service ntpd stop
+fi
+
 yum erase -y ntp*
 
 # Replace NTP Client software (Install chrony Package)

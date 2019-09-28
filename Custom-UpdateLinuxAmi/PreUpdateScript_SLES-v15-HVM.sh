@@ -27,6 +27,10 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #    https://github.com/SUSE-Enceladus
 #-------------------------------------------------------------------------------
 
+# Cleanup repository information
+zypper clean --all
+zypper --quiet refresh -fdb
+
 # Show Linux Distribution/Distro information
 if [ $(command -v lsb_release) ]; then
     lsb_release -a
@@ -44,11 +48,8 @@ rpm -qa --qf="%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n" | sort > /tmp/command-log
 # Default installation package [zypper command]
 zypper search --installed-only > /tmp/command-log_zypper_installed-package.txt
 
-# Default repository package [zypper command]
-zypper search > /tmp/command-log_zypper_repository-package-list.txt
-
 # systemd service config
-systemctl list-unit-files --no-pager -all > /tmp/command-log_systemctl_list-unit-files.txt
+systemctl list-unit-files --all --no-pager > /tmp/command-log_systemctl_list-unit-files.txt
 
 # Default repository products list [zypper command]
 zypper products > /tmp/command-log_zypper_repository-products-list.txt
