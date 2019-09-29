@@ -397,7 +397,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-UpdateSSMAgent",
 				"InstanceIds": [
@@ -436,7 +436,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -453,7 +453,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -470,7 +470,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -487,7 +487,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -504,7 +504,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -521,7 +521,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 3600,
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
@@ -537,7 +537,7 @@
 			"name": "StopInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
 			"action": "aws:changeInstanceState",
 			"maxAttempts": 3,
-			"timeoutSeconds": 1200,
+			"timeoutSeconds": 3600,
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
@@ -550,7 +550,7 @@
 			"name": "StartInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
 			"action": "aws:changeInstanceState",
 			"maxAttempts": 3,
-			"timeoutSeconds": 1200,
+			"timeoutSeconds": 3600,
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
