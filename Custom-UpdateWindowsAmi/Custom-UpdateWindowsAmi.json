@@ -670,7 +670,7 @@
 		{
 			"name": "WaitUntilSsmAgentIsOnline3",
 			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
+			"timeoutSeconds": 3600,
 			"maxAttempts": 3,
 			"onFailure": "Abort",
 			"inputs": {
@@ -802,7 +802,7 @@
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
-			"timeoutSeconds": 600,
+			"timeoutSeconds": 1800,
 			"inputs": {
 				"DocumentName": "AWSEC2-RunSysprep",
 				"InstanceIds": [
