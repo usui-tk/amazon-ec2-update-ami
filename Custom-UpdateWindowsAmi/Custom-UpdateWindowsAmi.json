@@ -511,7 +511,7 @@
 			}
 		},
 		{
-			"name": "StopInstanceforUpdateAwsComponents",
+			"name": "StopInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
 			"action": "aws:changeInstanceState",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -524,7 +524,7 @@
 			}
 		},
 		{
-			"name": "StartInstanceforUpdateAwsComponents",
+			"name": "StartInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
 			"action": "aws:changeInstanceState",
 			"maxAttempts": 3,
 			"timeoutSeconds": 1200,
@@ -560,45 +560,39 @@
 			}
 		},
 		{
-			"name": "RestartBackgroundIntelligentTransferService",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Continue",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"DocumentName": "AWSSupport-ManageWindowsService",
-				"Parameters": {
-					"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
-					"WindowsServiceName": "bits",
-					"StartupType": "Check",
-					"ServiceAction": "Force-Restart"
-				}
-			}
-		},
-		{
-			"name": "RestartWindowsUpdateService",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Continue",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"DocumentName": "AWSSupport-ManageWindowsService",
-				"Parameters": {
-					"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
-					"WindowsServiceName": "wuauserv",
-					"StartupType": "Check",
-					"ServiceAction": "Force-Restart"
-				}
-			}
-		},
-		{
-			"name": "WaitTimeforWindowsUpdateService",
+			"name": "WaitTimeforScanWindowsUpdates",
 			"action": "aws:sleep",
 			"maxAttempts": 3,
-			"onFailure": "Continue",
+			"onFailure": "Abort",
 			"timeoutSeconds": 1200,
 			"inputs": {
 				"Duration": "PT1M"
+			}
+		},
+		{
+			"name": "ScanWindowsUpdates",
+			"action": "aws:runCommand",
+			"maxAttempts": 3,
+			"onFailure": "Continue",
+			"timeoutSeconds": 14400,
+			"inputs": {
+				"DocumentName": "AWS-InstallWindowsUpdates",
+				"InstanceIds": [
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+				],
+				"Parameters": {
+					"Action": "Scan"
+				}
+			}
+		},
+		{
+			"name": "WaitTimeforInstallWindowsUpdates",
+			"action": "aws:sleep",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"Duration": "PT3M"
 			}
 		},
 		{
