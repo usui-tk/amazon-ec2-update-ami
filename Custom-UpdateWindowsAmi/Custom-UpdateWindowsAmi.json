@@ -560,6 +560,48 @@
 			}
 		},
 		{
+			"name": "RestartBackgroundIntelligentTransferService",
+			"action": "aws:runCommand",
+			"maxAttempts": 3,
+			"onFailure": "Continue",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"DocumentName": "AWSSupport-ManageWindowsService",
+				"Parameters": {
+					"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
+					"WindowsServiceName": "bits",
+					"StartupType": "Check",
+					"ServiceAction": "Force-Restart"
+				}
+			}
+		},
+		{
+			"name": "RestartWindowsUpdateService",
+			"action": "aws:runCommand",
+			"maxAttempts": 3,
+			"onFailure": "Continue",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"DocumentName": "AWSSupport-ManageWindowsService",
+				"Parameters": {
+					"InstanceId": "{{ DescribeManagedInstanceForInstanceId.InstanceId }}",
+					"WindowsServiceName": "wuauserv",
+					"StartupType": "Check",
+					"ServiceAction": "Force-Restart"
+				}
+			}
+		},
+		{
+			"name": "WaitTimeforWindowsUpdateService",
+			"action": "aws:sleep",
+			"maxAttempts": 3,
+			"onFailure": "Continue",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"Duration": "PT1M"
+			}
+		},
+		{
 			"name": "InstallWindowsUpdates",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
