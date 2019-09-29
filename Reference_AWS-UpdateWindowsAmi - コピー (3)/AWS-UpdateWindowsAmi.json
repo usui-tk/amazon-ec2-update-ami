@@ -24,8 +24,8 @@
 		},
 		"InstanceType": {
 			"type": "String",
-			"description": "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is c5n.xlarge.",
-			"default": "c5n.xlarge"
+			"description": "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is t2.medium.",
+			"default": "t2.medium"
 		},
 		"SubnetId": {
 			"type": "String",
@@ -95,104 +95,6 @@
 			}
 		},
 		{
-			"name": "AssertInstanceIsManagedInstance",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ LaunchInstance.InstanceIds }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
-			"name": "DescribeManagedInstanceForInstanceId",
-			"action": "aws:executeAwsApi",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ LaunchInstance.InstanceIds }}"
-						]
-					}
-				]
-			},
-			"outputs": [
-				{
-					"Name": "InstanceId",
-					"Selector": "$.InstanceInformationList[0].InstanceId"
-				}
-			]
-		},
-		{
-			"name": "DescribeManagedInstanceForPlatformType",
-			"action": "aws:executeAwsApi",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ LaunchInstance.InstanceIds }}"
-						]
-					}
-				]
-			},
-			"outputs": [
-				{
-					"Name": "PlatformType",
-					"Selector": "$.InstanceInformationList[0].PlatformType"
-				}
-			]
-		},
-		{
-			"name": "DescribeManagedInstanceForPlatformVersion",
-			"action": "aws:executeAwsApi",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ LaunchInstance.InstanceIds }}"
-						]
-					}
-				]
-			},
-			"outputs": [
-				{
-					"Name": "PlatformVersion",
-					"Selector": "$.InstanceInformationList[0].PlatformVersion"
-				}
-			]
-		},
-		{
 			"name": "OSCompatibilityCheck",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
@@ -201,7 +103,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunPowerShellScript",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{LaunchInstance.InstanceIds}}"
 				],
 				"Parameters": {
 					"executionTimeout": "7200",
@@ -218,7 +120,23 @@
 			}
 		},
 		{
-			"name": "UpdateEC2ConfigOrEC2Launch",
+			"name": "RunPreUpdateScript",
+			"action": "aws:runCommand",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1800,
+			"inputs": {
+				"DocumentName": "AWS-RunPowerShellScript",
+				"InstanceIds": [
+					"{{ LaunchInstance.InstanceIds }}"
+				],
+				"Parameters": {
+					"commands": "{{ PreUpdateScript }}"
+				}
+			}
+		},
+		{
+			"name": "UpdateEC2Config",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
@@ -226,7 +144,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunPowerShellScript",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"Parameters": {
 					"commands": [
@@ -401,34 +319,11 @@
 			"inputs": {
 				"DocumentName": "AWS-UpdateSSMAgent",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"Parameters": {
 					"allowDowngrade": "false"
 				}
-			}
-		},
-		{
-			"name": "WaitUntilSsmAgentIsOnline1",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
 			}
 		},
 		{
@@ -440,7 +335,7 @@
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{LaunchInstance.InstanceIds}}"
 				],
 				"Parameters": {
 					"name": "AWSPVDriver",
@@ -457,7 +352,7 @@
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{LaunchInstance.InstanceIds}}"
 				],
 				"Parameters": {
 					"name": "AwsEnaNetworkDriver",
@@ -474,7 +369,7 @@
 			"inputs": {
 				"DocumentName": "AWS-ConfigureAWSPackage",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{LaunchInstance.InstanceIds}}"
 				],
 				"Parameters": {
 					"name": "AWSNVMe",
@@ -483,151 +378,15 @@
 			}
 		},
 		{
-			"name": "UpdateAwsVssComponents",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 600,
-			"inputs": {
-				"DocumentName": "AWS-ConfigureAWSPackage",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"name": "AwsVssComponents",
-					"action": "Install"
-				}
-			}
-		},
-		{
-			"name": "UpdateEC2Rescue",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 600,
-			"inputs": {
-				"DocumentName": "AWS-ConfigureAWSPackage",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"name": "AWSSupport-EC2Rescue",
-					"action": "Install"
-				}
-			}
-		},
-		{
-			"name": "UpdateIntelSriovDriver",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 600,
-			"inputs": {
-				"DocumentName": "AWS-ConfigureAWSPackage",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"name": "IntelSriovDriver",
-					"action": "Install"
-				}
-			}
-		},
-		{
-			"name": "StopInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 1200,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "stopped"
-			}
-		},
-		{
-			"name": "StartInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 1200,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "running"
-			}
-		},
-		{
-			"name": "WaitUntilSsmAgentIsOnline2",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
-			"name": "WaitTimeforScanWindowsUpdates",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
-			}
-		},
-		{
-			"name": "ScanWindowsUpdates",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Continue",
-			"timeoutSeconds": 14400,
-			"inputs": {
-				"DocumentName": "AWS-InstallWindowsUpdates",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"Action": "Scan"
-				}
-			}
-		},
-		{
-			"name": "WaitTimeforInstallWindowsUpdates",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
-			}
-		},
-		{
 			"name": "InstallWindowsUpdates",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
-			"onFailure": "Continue",
+			"onFailure": "Abort",
 			"timeoutSeconds": 14400,
 			"inputs": {
 				"DocumentName": "AWS-InstallWindowsUpdates",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"Parameters": {
 					"Action": "Install",
@@ -642,146 +401,6 @@
 			}
 		},
 		{
-			"name": "StopInstanceforWindowsUpdates",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "stopped"
-			}
-		},
-		{
-			"name": "StartInstanceforWindowsUpdates",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "running"
-			}
-		},
-		{
-			"name": "WaitUntilSsmAgentIsOnline3",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
-			"name": "WaitTimeforScanWindowsUpdatesAfterOsReboot",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
-			}
-		},
-		{
-			"name": "ScanWindowsUpdatesAfterOsReboot",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Continue",
-			"timeoutSeconds": 14400,
-			"inputs": {
-				"DocumentName": "AWS-InstallWindowsUpdates",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"Action": "Scan"
-				}
-			}
-		},
-		{
-			"name": "RunPreUpdateScript",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 3600,
-			"inputs": {
-				"DocumentName": "AWS-RunPowerShellScript",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"commands": "{{ PreUpdateScript }}"
-				}
-			}
-		},
-		{
-			"name": "StopInstanceforPreUpdateScript",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "stopped"
-			}
-		},
-		{
-			"name": "StartInstanceforPreUpdateScript",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "running"
-			}
-		},
-		{
-			"name": "WaitUntilSsmAgentIsOnline4",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
 			"name": "RunPostUpdateScript",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
@@ -790,7 +409,7 @@
 			"inputs": {
 				"DocumentName": "AWS-RunPowerShellScript",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"Parameters": {
 					"commands": "{{ PostUpdateScript }}"
@@ -806,7 +425,7 @@
 			"inputs": {
 				"DocumentName": "AWSEC2-RunSysprep",
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{LaunchInstance.InstanceIds}}"
 				],
 				"Parameters": {
 					"Id": "{{automation:EXECUTION_ID}}"
@@ -814,14 +433,14 @@
 			}
 		},
 		{
-			"name": "StopInstanceforCreateImage",
+			"name": "StopInstance",
 			"action": "aws:changeInstanceState",
 			"maxAttempts": 3,
 			"timeoutSeconds": 7200,
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"CheckStateOnly": false,
 				"DesiredState": "stopped"
@@ -833,9 +452,7 @@
 			"maxAttempts": 3,
 			"onFailure": "Abort",
 			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
+				"InstanceId": "{{ LaunchInstance.InstanceIds }}",
 				"ImageName": "{{ TargetAmiName }}",
 				"NoReboot": true,
 				"ImageDescription": "Test CreateImage Description"
@@ -848,7 +465,7 @@
 			"onFailure": "Abort",
 			"inputs": {
 				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+					"{{ LaunchInstance.InstanceIds }}"
 				],
 				"DesiredState": "terminated"
 			}
