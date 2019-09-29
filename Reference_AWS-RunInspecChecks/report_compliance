@@ -1,0 +1,124 @@
+# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+require 'net/http'
+require 'uri'
+require 'json'
+require 'pathname'
+require 'aws-sdk-ssm'
+
+instance_id = ENV['AWS_SSM_INSTANCE_ID'];
+if(instance_id == nil)
+  abort('Unable to find environment variable AWS_SSM_INSTANCE_ID: make sure this script is executed by SSM Agent');
+end
+
+region = ENV['AWS_SSM_REGION_NAME'];
+if(region == nil)
+  abort('Unable to find environment variable AWS_SSM_REGION_NAME: make sure this script is executed by SSM Agent');
+end
+
+# get the current execution ID from the PWD
+# PWD is something like: /var/lib/amazon/ssm/INSTANCE_ID/document/orchestration/EXECUTION_ID/downloads/
+pwd = Pathname.pwd;
+execution_id = pwd.parent.basename.to_s;
+
+ssm = Aws::SSM::Client.new(region: region);
+
+results = JSON.parse(STDIN.read);
+
+# initialize compliance object
+comp = {
+  resource_id: instance_id,
+  resource_type: 'ManagedInstance',
+  compliance_type: 'Custom:InSpec',
+  execution_summary: {
+    execution_time: Time.now,
+    execution_id: execution_id,
+    execution_type: 'Command'
+  },
+  items: Array.new() # this array will be populated below
+};
+
+SEVERITIES= ['CRITICAL', 'HIGH', 'LOW']
+def impact_to_severity(impact)
+  impact_f = impact.to_f;
+  # map impact to severity using guidelines here: https://www.inspec.io/docs/reference/dsl_inspec/
+  case impact_f
+  when 0.0...0.4
+    severity = SEVERITIES[2]; # low
+  when 0.4...0.7
+    severity = SEVERITIES[1]; # high
+  when 0.7..1.0
+    severity = SEVERITIES[0]; # critical
+  else
+    # default to CRITICAL if impact value is outside ranges
+    severity = SEVERITIES[0];
+  end
+
+  return severity;
+end
+
+def counts_by_sev(c)
+  strs = []
+  SEVERITIES.each do |sev|
+    strs.push("#{c[sev]} #{sev.downcase}")
+  end
+
+  return strs.join(', ')
+end
+
+compliant = 0;
+non_compliant = 0;
+
+compliant_by_sev = Hash.new(0)
+non_compliant_by_sev = Hash.new(0)
+
+results['profiles'].each do |profile|
+  profile['controls'].each do |control|
+    if(control.has_key?('results'))
+      control['results'].each do |result|
+        severity = impact_to_severity(control['impact']);
+
+        item = {
+          id: "#{control['id']}-#{comp[:items].length}",
+          severity: severity,
+          title: "#{control['title']} : #{result['code_desc']}" # title + code_desc is most indicative of the test
+        };
+
+        status = result['status'];
+        if(status == 'passed')
+          item[:status] = 'COMPLIANT';
+          compliant += 1;
+          compliant_by_sev[severity] += 1;
+        elsif(status == "failed")
+          item[:status] = 'NON_COMPLIANT';
+          non_compliant += 1;
+          non_compliant_by_sev[severity] += 1;
+        else
+          # skip any other statuses such as 'skipped'
+          next;
+        end
+
+        comp[:items].push(item);
+      end
+    end
+  end
+end
+
+#puts(JSON.pretty_generate(comp));
+
+resp = ssm.put_compliance_items(comp);
+
+puts("Completed InSpec checks and put #{compliant} compliant (#{counts_by_sev(compliant_by_sev)}) and #{non_compliant} non-compliant (#{counts_by_sev(non_compliant_by_sev)}) items");

@@ -563,7 +563,7 @@
 			"name": "InstallWindowsUpdates",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
-			"onFailure": "Abort",
+			"onFailure": "Continue",
 			"timeoutSeconds": 14400,
 			"inputs": {
 				"DocumentName": "AWS-InstallWindowsUpdates",
