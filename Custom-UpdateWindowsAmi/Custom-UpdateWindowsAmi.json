@@ -701,6 +701,16 @@
 			}
 		},
 		{
+			"name": "WaitTimeforScanWindowsUpdatesAfterOsReboot",
+			"action": "aws:sleep",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"Duration": "PT5M"
+			}
+		},
+		{
 			"name": "WaitUntilSsmAgentIsOnline3",
 			"action": "aws:assertAwsResourceProperty",
 			"timeoutSeconds": 3600,
@@ -721,16 +731,6 @@
 				"DesiredValues": [
 					"Online"
 				]
-			}
-		},
-		{
-			"name": "WaitTimeforScanWindowsUpdatesAfterOsReboot",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
 			}
 		},
 		{
