@@ -432,7 +432,7 @@
 			}
 		},
 		{
-			"name": "UpdateEC2ConfigOrEC2Launch",
+			"name": "ConfigureforAWSSSMAgentServiceStartMode",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
