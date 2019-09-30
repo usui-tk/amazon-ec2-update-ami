@@ -593,6 +593,16 @@
 			}
 		},
 		{
+			"name": "WaitTimeforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
+			"action": "aws:sleep",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"Duration": "PT3M"
+			}
+		},
+		{
 			"name": "WaitUntilSsmAgentIsOnline2",
 			"action": "aws:assertAwsResourceProperty",
 			"timeoutSeconds": 1800,
@@ -616,16 +626,6 @@
 			}
 		},
 		{
-			"name": "WaitTimeforScanWindowsUpdates",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
-			}
-		},
-		{
 			"name": "ScanWindowsUpdates",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
@@ -639,16 +639,6 @@
 				"Parameters": {
 					"Action": "Scan"
 				}
-			}
-		},
-		{
-			"name": "WaitTimeforInstallWindowsUpdates",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT3M"
 			}
 		},
 		{
@@ -701,7 +691,7 @@
 			}
 		},
 		{
-			"name": "WaitTimeforScanWindowsUpdatesAfterOsReboot",
+			"name": "WaitTimeforWindowsUpdates",
 			"action": "aws:sleep",
 			"maxAttempts": 3,
 			"onFailure": "Abort",
@@ -789,6 +779,16 @@
 					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
 				"DesiredState": "running"
+			}
+		},
+		{
+			"name": "WaitTimeforPreUpdateScript",
+			"action": "aws:sleep",
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"timeoutSeconds": 1200,
+			"inputs": {
+				"Duration": "PT3M"
 			}
 		},
 		{
