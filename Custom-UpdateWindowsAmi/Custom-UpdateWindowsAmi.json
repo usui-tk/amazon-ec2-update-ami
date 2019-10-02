@@ -168,6 +168,31 @@
 			]
 		},
 		{
+			"name": "DescribeManagedInstanceForPlatformName",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformName",
+					"Selector": "$.InstanceInformationList[0].PlatformName"
+				}
+			]
+		},
+		{
 			"name": "DescribeManagedInstanceForPlatformVersion",
 			"action": "aws:executeAwsApi",
 			"timeoutSeconds": 1800,
@@ -444,18 +469,18 @@
 				],
 				"Parameters": {
 					"commands": [
-						"Get-Service -Name \"AmazonSSMAgent\"",
+						"Get-Service -Name 'AmazonSSMAgent'",
 						"",
 						"# Service Automatic Startup Setting (AWS Systems Manager agent)",
-						"$AmazonSSMAgentStatus = (Get-WmiObject Win32_Service -Filter \"Name='AmazonSSMAgent'\").StartMode",
+						"$AmazonSSMAgentStatus = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq 'AmazonSSMAgent' }).StartMode",
 						"",
-						"if ($AmazonSSMAgentStatus -ne \"Auto\") {",
+						"if ($AmazonSSMAgentStatus -ne Auto) {",
 						"  Write-Output \"#[AWS Systems Manager agent] Service Startup Type : $AmazonSSMAgentStatus -> Auto\"",
-						"  Set-Service -Name \"AmazonSSMAgent\" -StartupType Automatic",
+						"  Set-Service -Name 'AmazonSSMAgent' -StartupType Automatic",
 						"",
 						"  Start-Sleep -Seconds 5",
 						"",
-						"  $AmazonSSMAgentStatus = (Get-WmiObject Win32_Service -Filter \"Name='AmazonSSMAgent'\").StartMode",
+						"  $AmazonSSMAgentStatus = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq 'AmazonSSMAgent' }).StartMode",
 						"  Write-Output \"[AWS Systems Manager agent] Service Startup Type : $AmazonSSMAgentStatus\"",
 						"}",
 						"exit 0",
@@ -550,29 +575,33 @@
 			}
 		},
 		{
-			"name": "StopInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
-			"action": "aws:changeInstanceState",
+			"name": "ConfigureforHostnameAndOsRebootBySSMAutomation",
+			"action": "aws:runCommand",
 			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
 			"onFailure": "Abort",
+			"timeoutSeconds": 7200,
 			"inputs": {
+				"DocumentName": "AWS-RunPowerShellScript",
 				"InstanceIds": [
 					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
 				],
-				"DesiredState": "stopped"
-			}
-		},
-		{
-			"name": "StartInstanceforUpdateAwsDeviceDriverAndAWSSoftwareComponents",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "running"
+				"Parameters": {
+					"commands": [
+						"# Setting Hostname Parameter",
+						"Set-Variable -Name PrivateIp -Value (Invoke-RestMethod -Uri \"http://169.254.169.254/latest/meta-data/local-ipv4\")",
+						"Set-Variable -Name NewHostname -Value ($PrivateIp.Replace(\".\", \"-\"))",
+						"",
+						"# Setting Hostname",
+						"if ($Env:COMPUTERNAME -ne $NewHostname) {",
+						" Rename-Computer $NewHostname -Force",
+						" Start-Sleep -Seconds 5",
+						"",
+						" # Exit 3010 - see (https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-reboot.html)",
+						" Exit 3010",
+						"}",
+						""
+					]
+				}
 			}
 		},
 		{
@@ -582,7 +611,7 @@
 			"onFailure": "Abort",
 			"timeoutSeconds": 1200,
 			"inputs": {
-				"Duration": "PT3M"
+				"Duration": "PT5M"
 			}
 		},
 		{

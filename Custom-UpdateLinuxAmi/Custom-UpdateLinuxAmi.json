@@ -134,6 +134,31 @@
 			]
 		},
 		{
+			"name": "DescribeManagedInstanceForPlatformName",
+			"action": "aws:executeAwsApi",
+			"timeoutSeconds": 1800,
+			"maxAttempts": 3,
+			"onFailure": "Abort",
+			"inputs": {
+				"Service": "ssm",
+				"Api": "DescribeInstanceInformation",
+				"InstanceInformationFilterList": [
+					{
+						"key": "InstanceIds",
+						"valueSet": [
+							"{{ LaunchInstance.InstanceIds }}"
+						]
+					}
+				]
+			},
+			"outputs": [
+				{
+					"Name": "PlatformName",
+					"Selector": "$.InstanceInformationList[0].PlatformName"
+				}
+			]
+		},
+		{
 			"name": "DescribeManagedInstanceForPlatformVersion",
 			"action": "aws:executeAwsApi",
 			"timeoutSeconds": 1800,
