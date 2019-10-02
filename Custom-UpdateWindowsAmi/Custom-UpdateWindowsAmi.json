@@ -457,39 +457,6 @@
 			}
 		},
 		{
-			"name": "ConfigureforAWSSSMAgentServiceStartMode",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 7200,
-			"inputs": {
-				"DocumentName": "AWS-RunPowerShellScript",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"commands": [
-						"Get-Service -Name 'AmazonSSMAgent'",
-						"",
-						"# Service Automatic Startup Setting (AWS Systems Manager agent)",
-						"$AmazonSSMAgentStatus = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq 'AmazonSSMAgent' }).StartMode",
-						"",
-						"if ($AmazonSSMAgentStatus -ne Auto) {",
-						"  Write-Output \"#[AWS Systems Manager agent] Service Startup Type : $AmazonSSMAgentStatus -> Auto\"",
-						"  Set-Service -Name 'AmazonSSMAgent' -StartupType Automatic",
-						"",
-						"  Start-Sleep -Seconds 5",
-						"",
-						"  $AmazonSSMAgentStatus = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq 'AmazonSSMAgent' }).StartMode",
-						"  Write-Output \"[AWS Systems Manager agent] Service Startup Type : $AmazonSSMAgentStatus\"",
-						"}",
-						"exit 0",
-						""
-					]
-				}
-			}
-		},
-		{
 			"name": "UpdateAWSPVDriver",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
@@ -677,66 +644,7 @@
 			}
 		},
 		{
-			"name": "StopInstanceforWindowsUpdates",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "stopped"
-			}
-		},
-		{
-			"name": "StartInstanceforWindowsUpdates",
-			"action": "aws:changeInstanceState",
-			"maxAttempts": 3,
-			"timeoutSeconds": 3600,
-			"onFailure": "Abort",
-			"inputs": {
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"DesiredState": "running"
-			}
-		},
-		{
-			"name": "WaitTimeforWindowsUpdates",
-			"action": "aws:sleep",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 1200,
-			"inputs": {
-				"Duration": "PT5M"
-			}
-		},
-		{
-			"name": "WaitUntilSsmAgentIsOnline3",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 3600,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
-			"name": "ScanWindowsUpdatesAfterOsReboot",
+			"name": "ScanWindowsUpdatesAfterUpdate",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
 			"onFailure": "Continue",
@@ -748,6 +656,22 @@
 				],
 				"Parameters": {
 					"Action": "Scan"
+				}
+			}
+		},
+		{
+			"name": "ConfigureWindowsUpdates",
+			"action": "aws:runCommand",
+			"maxAttempts": 3,
+			"onFailure": "Continue",
+			"timeoutSeconds": 14400,
+			"inputs": {
+				"DocumentName": "AWS-ConfigureWindowsUpdate",
+				"InstanceIds": [
+					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
+				],
+				"Parameters": {
+					"updateLevel": "NeverCheckForUpdates"
 				}
 			}
 		},
@@ -800,11 +724,11 @@
 			"onFailure": "Abort",
 			"timeoutSeconds": 1200,
 			"inputs": {
-				"Duration": "PT3M"
+				"Duration": "PT5M"
 			}
 		},
 		{
-			"name": "WaitUntilSsmAgentIsOnline4",
+			"name": "WaitUntilSsmAgentIsOnline3",
 			"action": "aws:assertAwsResourceProperty",
 			"timeoutSeconds": 1800,
 			"maxAttempts": 3,
