@@ -560,11 +560,15 @@
 						"",
 						"# Setting Hostname",
 						"if ($Env:COMPUTERNAME -ne $NewHostname) {",
-						" Rename-Computer $NewHostname -Force",
-						" Start-Sleep -Seconds 5",
+						"  Write-Host 'Change the host name (with Windows operating system restart).'",
+						"  Rename-Computer $NewHostname -Force",
+						"  Start-Sleep -Seconds 5",
 						"",
-						" # Exit 3010 - see (https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-reboot.html)",
-						" Exit 3010",
+						"  # Exit 3010 - see (https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-reboot.html)",
+						"  Exit 3010",
+						"} else {",
+						"  Write-Host 'Do not change the host name.'",
+						"  Exit 0",
 						"}",
 						""
 					]
@@ -656,22 +660,6 @@
 				],
 				"Parameters": {
 					"Action": "Scan"
-				}
-			}
-		},
-		{
-			"name": "ConfigureWindowsUpdates",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Continue",
-			"timeoutSeconds": 14400,
-			"inputs": {
-				"DocumentName": "AWS-ConfigureWindowsUpdate",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"updateLevel": "NeverCheckForUpdates"
 				}
 			}
 		},
