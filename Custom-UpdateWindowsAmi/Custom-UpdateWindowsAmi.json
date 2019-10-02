@@ -516,23 +516,6 @@
 			}
 		},
 		{
-			"name": "UpdateIntelSriovDriver",
-			"action": "aws:runCommand",
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"timeoutSeconds": 3600,
-			"inputs": {
-				"DocumentName": "AWS-ConfigureAWSPackage",
-				"InstanceIds": [
-					"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-				],
-				"Parameters": {
-					"name": "IntelSriovDriver",
-					"action": "Install"
-				}
-			}
-		},
-		{
 			"name": "UpdateAwsVssComponents",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
