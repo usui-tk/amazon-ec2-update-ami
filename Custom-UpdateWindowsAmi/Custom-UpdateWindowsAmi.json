@@ -434,29 +434,6 @@
 			}
 		},
 		{
-			"name": "WaitUntilSsmAgentIsOnline1",
-			"action": "aws:assertAwsResourceProperty",
-			"timeoutSeconds": 1800,
-			"maxAttempts": 3,
-			"onFailure": "Abort",
-			"inputs": {
-				"Service": "ssm",
-				"Api": "DescribeInstanceInformation",
-				"InstanceInformationFilterList": [
-					{
-						"key": "InstanceIds",
-						"valueSet": [
-							"{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-						]
-					}
-				],
-				"PropertySelector": "$.InstanceInformationList[0].PingStatus",
-				"DesiredValues": [
-					"Online"
-				]
-			}
-		},
-		{
 			"name": "UpdateAWSPVDriver",
 			"action": "aws:runCommand",
 			"maxAttempts": 3,
@@ -586,7 +563,7 @@
 			}
 		},
 		{
-			"name": "WaitUntilSsmAgentIsOnline2",
+			"name": "WaitUntilSsmAgentIsOnline1",
 			"action": "aws:assertAwsResourceProperty",
 			"timeoutSeconds": 1800,
 			"maxAttempts": 3,
@@ -716,7 +693,7 @@
 			}
 		},
 		{
-			"name": "WaitUntilSsmAgentIsOnline3",
+			"name": "WaitUntilSsmAgentIsOnline2",
 			"action": "aws:assertAwsResourceProperty",
 			"timeoutSeconds": 1800,
 			"maxAttempts": 3,
