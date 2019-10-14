@@ -91,7 +91,7 @@ yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy
 yum install -y pcp pcp-manager pcp-pmda* pcp-system-tools
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
-yum install -y redhat-lsb-core redhat-support-tool
+yum install -y redhat-lsb-core redhat-support-tool redhat-access-insights
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
 yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel

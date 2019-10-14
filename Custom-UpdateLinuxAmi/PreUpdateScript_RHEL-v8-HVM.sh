@@ -96,7 +96,7 @@ dnf install -y setroubleshoot-server selinux-policy* setools-console checkpolicy
 dnf install -y pcp pcp-export-pcp2json pcp-manager pcp-pmda* pcp-selinux pcp-system-tools pcp-zeroconf
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
-dnf install -y redhat-lsb-core redhat-support-tool
+dnf install -y redhat-lsb-core redhat-support-tool insights-client
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
 dnf install -y @python36

@@ -93,7 +93,7 @@ yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy
 yum install -y pcp pcp-manager pcp-pmda* pcp-selinux pcp-system-tools pcp-zeroconf
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
-yum install -y redhat-lsb-core redhat-support-tool
+yum install -y redhat-lsb-core redhat-support-tool redhat-access-insights
 
 # Package Install Red Hat Enterprise Linux kernel live-patching tools (from Red Hat Official Repository)
 yum install -y kpatch
