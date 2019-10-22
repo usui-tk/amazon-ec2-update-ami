@@ -42,11 +42,21 @@ if [ $(compgen -ac | sort | uniq | grep jq) ]; then
 fi
 
 #-------------------------------------------------------------------------------
-# Install Kernel module and Configure Dynamic Kernel Module Support (DKMS) 
+# Install Kernel module and Configure Dynamic Kernel Module Support (DKMS)
 #-------------------------------------------------------------------------------
 
+# Operating system support status of AWS Nitro Hypervisor (Before - Install ENA Kernel module)
+# https://github.com/awslabs/aws-support-tools/tree/master/EC2/C5M5InstanceChecks
+curl -fsSL https://raw.githubusercontent.com/awslabs/aws-support-tools/master/EC2/C5M5InstanceChecks/c5_m5_checks_script.sh | bash
+
 # Package Install Kernel Module
-yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
+eval $(grep ^DEFAULTKERNEL= /etc/sysconfig/kernel)
+if [ -n "$DEFAULTKERNEL" ]; then
+	echo "Linux Kernel Package Name :" $DEFAULTKERNEL
+	yum install -y ${DEFAULTKERNEL}-devel-$(uname -r) ${DEFAULTKERNEL}-headers-$(uname -r)
+else
+	yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
+fi
 
 # Package Install Build Tool
 yum install -y gcc make rpm-build rpmdevtools
@@ -95,6 +105,10 @@ date; dkms install -m amzn-drivers -v ${SourceVersion}; date
 
 modinfo ena
 
+# Operating system support status of AWS Nitro Hypervisor (After - Install ENA Kernel module)
+# https://github.com/awslabs/aws-support-tools/tree/master/EC2/C5M5InstanceChecks
+curl -fsSL https://raw.githubusercontent.com/awslabs/aws-support-tools/master/EC2/C5M5InstanceChecks/c5_m5_checks_script.sh | bash
+
 #-------------------------------------------------------------------------------
 # Configure EC2 Instance Support for Amazon ENA Device
 #-------------------------------------------------------------------------------
@@ -116,14 +130,14 @@ fi
 # Remove Network Persistent Rules
 #-------------------------------------------------------------------------------
 # [Important]
-# If your instance operating system contains an /etc/udev/rules.d/70-persistent-net.rules file, you must delete it before creating the AMI. 
+# If your instance operating system contains an /etc/udev/rules.d/70-persistent-net.rules file, you must delete it before creating the AMI.
 # This file contains the MAC address for the Ethernet adapter of the original instance.
 # If another instance boots with this file, the operating system will be unable to find the device and eth0 might fail, causing boot issues.
 # This file is regenerated at the next boot cycle, and any instances launched from the AMI create their own version of the file.
 #-------------------------------------------------------------------------------
 
 if [ -f /etc/udev/rules.d/70-persistent-net.rules ]; then
-    rm -fr /etc/udev/rules.d/70-persistent-net.rules
+	rm -fr /etc/udev/rules.d/70-persistent-net.rules
 fi
 
 #-------------------------------------------------------------------------------

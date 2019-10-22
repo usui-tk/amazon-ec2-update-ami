@@ -7,7 +7,7 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 
 #-------------------------------------------------------------------------------
 # Acquire unique information of Linux distribution
-#  - Amazon Linux 2 
+#  - Amazon Linux 2
 #    https://aws.amazon.com/jp/amazon-linux-2/
 #    https://aws.amazon.com/jp/amazon-linux-2/release-notes/
 #    https://aws.amazon.com/jp/amazon-linux-2/faqs/
@@ -78,7 +78,7 @@ yum install -y pcp pcp-export-pcp2json pcp-manager pcp-pmda* pcp-system-tools pc
 yum install -y python3 python3-pip python3-rpm-macros python3-setuptools python3-test python3-tools python3-wheel
 
 # Package Install Amazon Linux Specific Tools (from Amazon Official Repository)
-yum install -y ec2-hibinit-agent hibagent 
+yum install -y ec2-hibinit-agent hibagent
 # yum install -y ec2-instance-connect
 
 #-------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ fi
 aws --version
 
 # Setting AWS-CLI default Region & Output format
-aws configure << __EOF__ 
+aws configure << __EOF__
 
 
 
@@ -158,7 +158,7 @@ curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -
 # Check the exit code of the Amazon Inspector Agent installer script
 if [ $InspectorInstallStatus -eq 0 ]; then
     rpm -qi AwsAgent
-	
+
 	systemctl daemon-reload
 
 	systemctl restart awsagent

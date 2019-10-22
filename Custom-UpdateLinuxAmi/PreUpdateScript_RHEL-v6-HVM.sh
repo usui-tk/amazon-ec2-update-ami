@@ -65,13 +65,26 @@ yum repolist all
 # Enable Channnel (RHEL Server RPM) - [Default Enable]
 yum-config-manager --enable rhui-REGION-rhel-server-releases
 yum-config-manager --enable rhui-REGION-rhel-server-rh-common
-yum-config-manager --enable rhui-REGION-client-config-server-6
+yum-config-manager --enable rhui-client-config-server-6
 
 # Enable Channnel (RHEL Server RPM) - [Default Disable]
 yum-config-manager --enable rhui-REGION-rhel-server-extras
 yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
 yum-config-manager --enable rhui-REGION-rhel-server-supplementary
 yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+
+# yum repository metadata Clean up and Make Cache data
+yum clean all
+yum makecache
+
+# RHEL/RHUI repository package [yum command]
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-releases" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-releases.txt
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-rh-common" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-rh-common.txt
+yum --disablerepo="*" --enablerepo="rhui-client-config-server-6" list available > /tmp/command-log_yum_repository-package-list_rhui-client-config-server-6.txt
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-extras" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-extras.txt
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-releases-optional" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-releases-optional.txt
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-supplementary" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-supplementary.txt
+yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-rhscl" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-rhscl.txt
 
 # yum repository metadata Clean up
 yum clean all
@@ -84,7 +97,7 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y acpid dstat dmidecode ebtables gdisk git hdparm kexec-tools libicu lsof lzop iotop mlocate mtr nc net-snmp-utils nmap numactl perf psmisc rsync sos strace sysstat tcpdump traceroute tree unzip uuid vim-enhanced yum-priorities yum-plugin-versionlock yum-utils wget
+yum install -y acpid bind-utils blktrace crash-trace-command crypto-utils curl dstat ebtables ethtool expect gdisk git hdparm intltool iotop kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nmap numactl psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump traceroute tree unzip vim-enhanced wget zip zsh
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
 yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
@@ -100,7 +113,7 @@ yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools 
 # yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 
 cat > /etc/yum.repos.d/epel-bootstrap.repo << __EOF__
-[epel]
+[epel-bootstrap]
 name=Bootstrap EPEL
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=\$basearch
 failovermethod=priority
@@ -108,7 +121,9 @@ enabled=0
 gpgcheck=0
 __EOF__
 
-yum --enablerepo=epel -y install epel-release
+yum clean all
+
+yum --enablerepo=epel-bootstrap -y install epel-release
 rm -f /etc/yum.repos.d/epel-bootstrap.repo
 
 sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
@@ -117,10 +132,10 @@ sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
 yum clean all
 
 # EPEL repository package [yum command]
-yum --disablerepo="*" --enablerepo="epel" list available > /tmp/command-log_yum_repository-epel-package-list.txt
+yum --disablerepo="*" --enablerepo="epel" list available > /tmp/command-log_yum_repository-package-list_epel.txt
 
 # Package Install RHEL System Administration Tools (from EPEL Repository)
-yum --enablerepo=epel install -y bash-completion fio iperf3 jq zstd
+yum --enablerepo=epel install -y bash-completion fio iperf3 jq moreutils zstd
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData
@@ -141,32 +156,37 @@ if [ $(compgen -ac | sort | uniq | grep jq) ]; then
 fi
 
 #-------------------------------------------------------------------------------
-# Custom Package Installation [AWS-CLI]
+# Custom Package Installation [AWS-CLI/Python 3]
 #-------------------------------------------------------------------------------
-yum --enablerepo=epel install -y python-pip python2-colorama python2-rsa python2-jmespath python-futures python-ordereddict
-pip install awscli
-pip show awscli
 
-# Workaround - SSL-Warnings
-# https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
-cat /usr/bin/aws
-sed -i "/import os/a import urllib3" /usr/bin/aws
-sed -i "/import urllib3/a urllib3.disable_warnings()" /usr/bin/aws
-cat /usr/bin/aws
+yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
+yum install -y rh-python36-PyYAML rh-python36-python-docutils rh-python36-python-six
 
-# Setting Bash-Completion
-cat > /etc/profile.d/aws-cli.sh << __EOF__
-if [ -n "\$BASH_VERSION" ]; then
-   complete -C /usr/bin/aws_completer aws
-fi
+/opt/rh/rh-python36/root/usr/bin/python3 -V
+/opt/rh/rh-python36/root/usr/bin/pip3 -V
+
+/opt/rh/rh-python36/root/usr/bin/pip3 install awscli
+
+/opt/rh/rh-python36/root/usr/bin/pip3 show awscli
+
+alternatives --install "/usr/bin/aws" aws "/opt/rh/rh-python36/root/usr/bin/aws" 1
+alternatives --display aws
+alternatives --install "/usr/bin/aws_completer" aws_completer "/opt/rh/rh-python36/root/usr/bin/aws_completer" 1
+alternatives --display aws_completer
+
+cat > /etc/bash_completion.d/aws_bash_completer << __EOF__
+# Typically that would be added under one of the following paths:
+# - /etc/bash_completion.d
+# - /usr/local/etc/bash_completion.d
+# - /usr/share/bash-completion/completions
+
+complete -C aws_completer aws
 __EOF__
-
-source /etc/profile.d/aws-cli.sh
 
 aws --version
 
 # Setting AWS-CLI default Region & Output format
-aws configure << __EOF__ 
+aws configure << __EOF__
 
 
 
@@ -182,42 +202,13 @@ aws configure list
 cat ~/.aws/config
 
 #-------------------------------------------------------------------------------
-# Custom Package Installation [AWS-CLI/Python 3]
-#-------------------------------------------------------------------------------
-
-# yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
-# yum install -y rh-python36-PyYAML rh-python36-python-docutils rh-python36-python-six
-
-# /opt/rh/rh-python36/root/usr/bin/python3 -V
-# /opt/rh/rh-python36/root/usr/bin/pip3 -V
-
-# /opt/rh/rh-python36/root/usr/bin/pip3 install awscli
-
-# /opt/rh/rh-python36/root/usr/bin/pip3 show awscli
-
-# alternatives --install "/usr/bin/aws" aws "/opt/rh/rh-python36/root/usr/bin/aws" 1
-# alternatives --display aws
-# alternatives --install "/usr/bin/aws_completer" aws_completer "/opt/rh/rh-python36/root/usr/bin/aws_completer" 1
-# alternatives --display aws_completer
-
-# cat > /etc/bash_completion.d/aws_bash_completer << __EOF__
-# # Typically that would be added under one of the following paths:
-# # - /etc/bash_completion.d
-# # - /usr/local/etc/bash_completion.d
-# # - /usr/share/bash-completion/completions
-
-# complete -C aws_completer aws
-# __EOF__
-
-# aws --version
-
-#-------------------------------------------------------------------------------
 # Custom Package Installation [AWS CloudFormation Helper Scripts]
 # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/cfn-helper-scripts-reference.html
 # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/releasehistory-aws-cfn-bootstrap.html
 #-------------------------------------------------------------------------------
-# yum --enablerepo=epel localinstall -y https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm
-# yum --enablerepo=epel install -y python-pip
+# yum --enablerepo=epel localinstall -y "https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm"
+
+yum --enablerepo=epel install -y python-pip
 # pip install --upgrade pip
 
 pip install pystache
@@ -273,7 +264,7 @@ curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -
 # Check the exit code of the Amazon Inspector Agent installer script
 if [ $InspectorInstallStatus -eq 0 ]; then
 	rpm -qi AwsAgent
-	
+
 	# Configure Amazon Inspector Agent software (Start Daemon awsagent)
 	service awsagent status
 	service awsagent restart
@@ -297,7 +288,7 @@ fi
 
 yum localinstall --nogpgcheck -y "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
 
-# Package Information 
+# Package Information
 rpm -qi amazon-cloudwatch-agent
 
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status
@@ -367,7 +358,7 @@ chkconfig --list tuned
 tuned-adm list
 
 tuned-adm active
-tuned-adm profile throughput-performance 
+tuned-adm profile throughput-performance
 tuned-adm active
 
 #-------------------------------------------------------------------------------

@@ -15,11 +15,12 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #
 #    https://access.redhat.com/articles/3135121
 #
+#    https://aws.amazon.com/marketplace/pp/B07T4SQ5RZ
+#
 #-------------------------------------------------------------------------------
 
 # Cleanup repository information
 dnf clean all
-dnf makecache
 
 # Show Linux Distribution/Distro information
 if [ $(command -v lsb_release) ]; then
@@ -74,12 +75,20 @@ dnf config-manager --enable rhel-8-appstream-rhui-rpms
 dnf config-manager --enable rhui-client-config-server-8
 
 # Enable Channnel (RHEL Server RPM) - [Default Disable]
-# dnf config-manager --enable rhel-8-supplementary-rhui-rpms
-# dnf config-manager --enable rhui-codeready-builder-for-rhel-8-rhui-rpms
+dnf config-manager --enable rhui-codeready-builder-for-rhel-8-rhui-rpms
+
+# Cleanup repository information and Macke Cache data
+dnf clean all
+dnf makecache
+
+# RHEL/RHUI repository package [dnf command]
+dnf repository-packages "rhel-8-baseos-rhui-rpms" list > /tmp/command-log_dnf_repository-package-list_rhel-8-baseos-rhui-rpms.txt
+dnf repository-packages "rhel-8-appstream-rhui-rpms" list > /tmp/command-log_dnf_repository-package-list_rhel-8-appstream-rhui-rpms.txt
+dnf repository-packages "rhui-client-config-server-8" list > /tmp/command-log_dnf_repository-package-list_rhui-client-config-server-8.txt
+dnf repository-packages "rhui-codeready-builder-for-rhel-8-rhui-rpms" list > /tmp/command-log_dnf_repository-package-list_rhui-codeready-builder-for-rhel-8-rhui-rpms.txt
 
 # Cleanup repository information
 dnf clean all
-dnf makecache
 
 # Default Package Update
 dnf update -y
@@ -89,14 +98,17 @@ dnf update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-dnf install -y acpid arptables bash-completion bc bcc-tools bind-utils blktrace bpftool crash-trace-command crypto-policies curl dstat ebtables ethtool expect fio gdisk git hdparm intltool iotop iperf3 iptraf-ng jq kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nftables nmap numactl nvme-cli nvmetcli pmempool psacct psmisc rsync smartmontools sos strace symlinks sysstat tcpdump tlog traceroute tree unzip vdo vim-enhanced wget xfsdump xfsprogs zip zsh
+dnf install -y acpid arptables bash-completion bc bcc bcc-tools bind-utils blktrace bpftool crash-trace-command crypto-policies curl dstat ebtables ethtool expect fio gdisk git gnutls-utils hdparm intltool iotop iperf3 iptraf-ng jq kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nftables nmap numactl nvme-cli nvmetcli patchutils pmempool psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump tlog traceroute tree unzip vdo vim-enhanced wget xfsdump xfsprogs zip zsh
 dnf install -y cifs-utils nfs-utils nfs4-acl-tools
 dnf install -y iscsi-initiator-utils lsscsi sg3_utils
-dnf install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
+dnf install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils policycoreutils-python-utils policycoreutils-restorecond
 dnf install -y pcp pcp-export-pcp2json pcp-manager pcp-pmda* pcp-selinux pcp-system-tools pcp-zeroconf
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 dnf install -y redhat-lsb-core redhat-support-tool insights-client
+
+# Package Install Red Hat Enterprise Linux kernel live-patching tools (from Red Hat Official Repository)
+dnf install -y kpatch
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
 dnf install -y @python36
@@ -109,7 +121,7 @@ dnf install -y python3 python3-pip python3-rpm-generators python3-rpm-macros pyt
 # dnf localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
 cat > /etc/yum.repos.d/epel-bootstrap.repo << __EOF__
-[epel]
+[epel-bootstrap]
 name=Extra Packages for Enterprise Linux \$releasever - \$basearch
 #baseurl=https://download.fedoraproject.org/pub/epel/\$releasever/Everything/\$basearch
 metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-\$releasever&arch=\$basearch&infra=\$infra&content=\$contentdir
@@ -118,7 +130,9 @@ enabled=0
 gpgcheck=0
 __EOF__
 
-dnf --enablerepo=epel -y install epel-release
+dnf clean all
+
+dnf --enablerepo=epel-bootstrap -y install epel-release
 rm -f /etc/yum.repos.d/epel-bootstrap.repo
 
 egrep '^\[|enabled' /etc/yum.repos.d/epel*
@@ -130,11 +144,11 @@ egrep '^\[|enabled' /etc/yum.repos.d/epel*
 dnf clean all
 
 # EPEL repository package [dnf command]
-dnf repository-packages epel list > /tmp/command-log_dnf_repository-epel-package-list.txt
+dnf repository-packages epel list > /tmp/command-log_dnf_repository-package-list_epel.txt
 
 # # Package Install RHEL System Administration Tools (from EPEL Repository)
 dnf --enablerepo=epel install -y atop iftop zstd
-# dnf --enablerepo=epel install -y atop collectl
+# dnf --enablerepo=epel install -y collectl moreutils moreutils-parallel
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData
@@ -191,7 +205,7 @@ __EOF__
 aws --version
 
 # Setting AWS-CLI default Region & Output format
-aws configure << __EOF__ 
+aws configure << __EOF__
 
 
 
@@ -244,7 +258,7 @@ fi
 # # Check the exit code of the Amazon Inspector Agent installer script
 # if [ $InspectorInstallStatus -eq 0 ]; then
 # 	rpm -qi AwsAgent
-	
+
 # 	systemctl daemon-reload
 
 # 	systemctl restart awsagent
@@ -391,7 +405,7 @@ fi
 tuned-adm list
 
 tuned-adm active
-tuned-adm profile throughput-performance 
+tuned-adm profile throughput-performance
 tuned-adm active
 
 #-------------------------------------------------------------------------------

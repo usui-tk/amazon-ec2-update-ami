@@ -65,15 +65,30 @@ yum update -y rh-amazon-rhui-client
 yum repolist all
 
 # Enable Channnel (RHEL Server RPM) - [Default Enable]
-yum-config-manager --enable rhui-REGION-rhel-server-releases
-yum-config-manager --enable rhui-REGION-rhel-server-rh-common
-yum-config-manager --enable rhui-REGION-client-config-server-7
+yum-config-manager --enable rhel-7-server-rhui-rpms
+yum-config-manager --enable rhel-7-server-rhui-rh-common-rpms
+yum-config-manager --enable rhui-client-config-server-7
 
 # Enable Channnel (RHEL Server RPM) - [Default Disable]
-yum-config-manager --enable rhui-REGION-rhel-server-extras
-yum-config-manager --enable rhui-REGION-rhel-server-optional
-yum-config-manager --enable rhui-REGION-rhel-server-supplementary
-yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+yum-config-manager --enable rhel-7-server-rhui-extras-rpms
+yum-config-manager --enable rhel-7-server-rhui-optional-rpms
+yum-config-manager --enable rhel-7-server-rhui-supplementary-rpms
+yum-config-manager --enable rhel-7-server-dotnet-rhui-rpms
+yum-config-manager --enable rhel-server-rhui-rhscl-7-rpms
+
+# yum repository metadata Clean up and Make Cache data
+yum clean all
+yum makecache
+
+# RHEL/RHUI repository package [yum command]
+yum --disablerepo="*" --enablerepo="rhel-7-server-rhui-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-rhui-rpms.txt
+yum --disablerepo="*" --enablerepo="rhel-7-server-rhui-rh-common-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-rhui-rh-common-rpms.txt
+yum --disablerepo="*" --enablerepo="rhui-client-config-server-7" list available > /tmp/command-log_yum_repository-package-list_rhui-client-config-server-7.txt
+yum --disablerepo="*" --enablerepo="rhel-7-server-rhui-extras-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-rhui-extras-rpms.txt
+yum --disablerepo="*" --enablerepo="rhel-7-server-rhui-optional-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-rhui-optional-rpms.txt
+yum --disablerepo="*" --enablerepo="rhel-7-server-rhui-supplementary-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-rhui-supplementary-rpms.txt
+yum --disablerepo="*" --enablerepo="rhel-7-server-dotnet-rhui-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-7-server-dotnet-rhui-rpms.txt
+yum --disablerepo="*" --enablerepo="rhel-server-rhui-rhscl-7-rpms" list available > /tmp/command-log_yum_repository-package-list_rhel-server-rhui-rhscl-7-rpms.txt
 
 # yum repository metadata Clean up
 yum clean all
@@ -86,10 +101,10 @@ yum update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-yum install -y acpid arptables bash-completion bc bcc-tools bind-utils dstat ebtables fio gdisk git hdparm kexec-tools libicu lsof lzop iotop iperf3 mlocate mtr nc net-snmp-utils nmap nvme-cli numactl psmisc rsync smartmontools sos strace sysstat tcpdump time tree traceroute unzip uuid vim-enhanced xfsdump xfsprogs yum-priorities yum-plugin-versionlock yum-utils wget zip
+yum install -y acpid arptables bash-completion bc bcc bcc-tools bind-utils blktrace bpftool crash-trace-command crypto-utils curl dstat ebtables ethtool expect fio gdisk git hdparm intltool iotop iperf3 iptraf-ng kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nftables nmap numactl nvme-cli nvmetcli pmempool psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump traceroute tree unzip vdo vim-enhanced wget xfsdump xfsprogs zip zsh
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi sdparm sg3_utils
-yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
+yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils policycoreutils-restorecond
 yum install -y pcp pcp-manager pcp-pmda* pcp-selinux pcp-system-tools pcp-zeroconf
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
@@ -109,7 +124,7 @@ yum install -y python3 python3-pip python3-rpm-generators python3-rpm-macros pyt
 # yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
 cat > /etc/yum.repos.d/epel-bootstrap.repo << __EOF__
-[epel]
+[epel-bootstrap]
 name=Bootstrap EPEL
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=\$basearch
 failovermethod=priority
@@ -117,7 +132,9 @@ enabled=0
 gpgcheck=0
 __EOF__
 
-yum --enablerepo=epel -y install epel-release
+yum clean all
+
+yum --enablerepo=epel-bootstrap -y install epel-release
 rm -f /etc/yum.repos.d/epel-bootstrap.repo
 
 sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
@@ -126,10 +143,10 @@ sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
 yum clean all
 
 # EPEL repository package [yum command]
-yum --disablerepo="*" --enablerepo="epel" list available > /tmp/command-log_yum_repository-epel-package-list.txt
+yum --disablerepo="*" --enablerepo="epel" list available > /tmp/command-log_yum_repository-package-list_epel.txt
 
 # Package Install RHEL System Administration Tools (from EPEL Repository)
-yum --enablerepo=epel install -y atop collectl jq zstd
+yum --enablerepo=epel install -y atop bash-completion-extras collectl jq moreutils moreutils-parallel zstd
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData
@@ -177,7 +194,7 @@ __EOF__
 aws --version
 
 # Setting AWS-CLI default Region & Output format
-aws configure << __EOF__ 
+aws configure << __EOF__
 
 
 
@@ -199,53 +216,53 @@ cat ~/.aws/config
 #-------------------------------------------------------------------------------
 # yum --enablerepo=epel localinstall -y https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm
 
-yum install -y python-setuptools
+# yum install -y python-setuptools
 
-easy_install --script-dir "/opt/aws/bin" https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+# easy_install --script-dir "/opt/aws/bin" https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
 
-mkdir -m 755 -p /etc/cfn/hooks.d
+# mkdir -m 755 -p /etc/cfn/hooks.d
 
-# cfn-hup.conf Configuration File
-cat > /etc/cfn/cfn-hup.conf << __EOF__
-[main]
-stack=
-__EOF__
+# # cfn-hup.conf Configuration File
+# cat > /etc/cfn/cfn-hup.conf << __EOF__
+# [main]
+# stack=
+# __EOF__
 
-# cfn-auto-reloader.conf Configuration File
-cat > /etc/cfn/hooks.d/cfn-auto-reloader.conf << __EOF__
-[hookname]
-triggers=post.update
-path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
-action=
-runas=root
-__EOF__
+# # cfn-auto-reloader.conf Configuration File
+# cat > /etc/cfn/hooks.d/cfn-auto-reloader.conf << __EOF__
+# [hookname]
+# triggers=post.update
+# path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
+# action=
+# runas=root
+# __EOF__
 
-# cfn-hup.service Configuration File
-cat > /lib/systemd/system/cfn-hup.service << __EOF__
-[Unit]
-Description=cfn-hup daemon
+# # cfn-hup.service Configuration File
+# cat > /lib/systemd/system/cfn-hup.service << __EOF__
+# [Unit]
+# Description=cfn-hup daemon
 
-[Service]
-Type=simple
-ExecStart=/opt/aws/bin/cfn-hup
-Restart=always
+# [Service]
+# Type=simple
+# ExecStart=/opt/aws/bin/cfn-hup
+# Restart=always
 
-[Install]
-WantedBy=multi-user.target
-__EOF__
+# [Install]
+# WantedBy=multi-user.target
+# __EOF__
 
-# Execute AWS CloudFormation Helper software
-systemctl daemon-reload
+# # Execute AWS CloudFormation Helper software
+# systemctl daemon-reload
 
-systemctl restart cfn-hup
+# systemctl restart cfn-hup
 
-systemctl status -l cfn-hup
+# systemctl status -l cfn-hup
 
-# Configure AWS CloudFormation Helper software (Start Daemon awsagent)
-if [ $(systemctl is-enabled cfn-hup) = "disabled" ]; then
-	systemctl enable cfn-hup
-	systemctl is-enabled cfn-hup
-fi
+# # Configure AWS CloudFormation Helper software (Start Daemon awsagent)
+# if [ $(systemctl is-enabled cfn-hup) = "disabled" ]; then
+# 	systemctl enable cfn-hup
+# 	systemctl is-enabled cfn-hup
+# fi
 
 #-------------------------------------------------------------------------------
 # Custom Package Installation [AWS Systems Manager agent (aka SSM agent)]
@@ -285,7 +302,7 @@ curl -fsSL "https://inspector-agent.amazonaws.com/linux/latest/install" | bash -
 # Check the exit code of the Amazon Inspector Agent installer script
 if [ $InspectorInstallStatus -eq 0 ]; then
 	rpm -qi AwsAgent
-	
+
 	systemctl daemon-reload
 
 	systemctl restart awsagent
@@ -431,7 +448,7 @@ fi
 tuned-adm list
 
 tuned-adm active
-tuned-adm profile throughput-performance 
+tuned-adm profile throughput-performance
 tuned-adm active
 
 #-------------------------------------------------------------------------------
