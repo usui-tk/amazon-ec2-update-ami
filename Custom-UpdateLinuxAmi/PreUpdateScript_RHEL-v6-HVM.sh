@@ -54,6 +54,18 @@ yum repolist all > /tmp/command-log_yum_repository-list.txt
 #-------------------------------------------------------------------------------
 # Default Package Update
 #-------------------------------------------------------------------------------
+#  - RHEL v6 - Red Hat Yum Repository Default Status (Enable/Disable)
+#
+#    [Default - Enable]
+#        rhui-REGION-rhel-server-releases
+#        rhui-REGION-rhel-server-rh-common
+#        rhui-client-config-server-6
+#    [Default - Disable]
+#        rhui-REGION-rhel-server-extras
+#        rhui-REGION-rhel-server-releases-optional
+#        rhui-REGION-rhel-server-supplementary
+#        rhui-REGION-rhel-server-rhscl
+#-------------------------------------------------------------------------------
 
 # Red Hat Update Infrastructure Client Package Update
 yum clean all
@@ -62,29 +74,30 @@ yum update -y rh-amazon-rhui-client
 # Checking repository information
 yum repolist all
 
-# Enable Channnel (RHEL Server RPM) - [Default Enable]
-yum-config-manager --enable rhui-REGION-rhel-server-releases
-yum-config-manager --enable rhui-REGION-rhel-server-rh-common
-yum-config-manager --enable rhui-client-config-server-6
+# Get Yum Repository List (Exclude Yum repository related to "beta, debug, source, test")
+repolist=$(yum repolist all | grep -ie "enabled" -ie "disabled" | grep -ve "Loaded plugins" -ve "beta" -ve "debug" -ve "source" -ve "test" | awk '{print $1}' | awk '{ sub("/.*$",""); print $0; }' | sort)
 
-# Enable Channnel (RHEL Server RPM) - [Default Disable]
-yum-config-manager --enable rhui-REGION-rhel-server-extras
-yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
-yum-config-manager --enable rhui-REGION-rhel-server-supplementary
-yum-config-manager --enable rhui-REGION-rhel-server-rhscl
+# Enable Yum Repository Data from RHUI (Red Hat Update Infrastructure)
+for repo in $repolist
+do
+	echo "[Target repository Name (Enable yum repository)] :" $repo
+	yum-config-manager --enable ${repo}
+	sleep 3
+done
 
-# yum repository metadata Clean up and Make Cache data
+# Checking repository information
+yum repolist all
+
+# yum repository metadata Clean up
 yum clean all
-yum makecache
 
 # RHEL/RHUI repository package [yum command]
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-releases" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-releases.txt
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-rh-common" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-rh-common.txt
-yum --disablerepo="*" --enablerepo="rhui-client-config-server-6" list available > /tmp/command-log_yum_repository-package-list_rhui-client-config-server-6.txt
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-extras" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-extras.txt
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-releases-optional" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-releases-optional.txt
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-supplementary" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-supplementary.txt
-yum --disablerepo="*" --enablerepo="rhui-REGION-rhel-server-rhscl" list available > /tmp/command-log_yum_repository-package-list_rhui-REGION-rhel-server-rhscl.txt
+for repo in $repolist
+do
+	echo "[Target repository Name (Collect yum repository package list)] :" $repo
+	yum --disablerepo="*" --enablerepo=${repo} list available > /tmp/command-log_yum_repository-package-list_${repo}.txt
+	sleep 3
+done
 
 # yum repository metadata Clean up
 yum clean all
@@ -107,7 +120,11 @@ yum install -y pcp pcp-manager pcp-pmda* pcp-system-tools
 yum install -y redhat-lsb-core redhat-support-tool redhat-access-insights
 
 # Package Install Python 3 Runtime (from Red Hat Official Repository)
-yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
+yum install -y rh-python36 rh-python36-python-pip rh-python36-python-devel rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
+
+#-------------------------------------------------------------------------------
+# Custom Package Installation [EPEL]
+#-------------------------------------------------------------------------------
 
 # Package Install EPEL(Extra Packages for Enterprise Linux) Repository Package
 # yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
@@ -124,11 +141,18 @@ __EOF__
 yum clean all
 
 yum --enablerepo=epel-bootstrap -y install epel-release
+
+# Delete yum temporary data
 rm -f /etc/yum.repos.d/epel-bootstrap.repo
+rm -rf /var/cache/yum/x86_64/6Server/epel-bootstrap*
 
+# Disable EPEL yum repository
+egrep '^\[|enabled' /etc/yum.repos.d/epel*
 sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel.repo
-# yum-config-manager --disable epel epel-debuginfo epel-source
+sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel-*.repo
+egrep '^\[|enabled' /etc/yum.repos.d/epel*
 
+# yum repository metadata Clean up
 yum clean all
 
 # EPEL repository package [yum command]
@@ -159,16 +183,18 @@ fi
 # Custom Package Installation [AWS-CLI/Python 3]
 #-------------------------------------------------------------------------------
 
-yum install -y rh-python36 rh-python36-python-pip rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
+yum install -y rh-python36 rh-python36-python-pip rh-python36-python-devel rh-python36-python-setuptools rh-python36-python-setuptools rh-python36-python-simplejson rh-python36-python-test rh-python36-python-tools rh-python36-python-virtualenv rh-python36-python-wheel
 yum install -y rh-python36-PyYAML rh-python36-python-docutils rh-python36-python-six
 
 /opt/rh/rh-python36/root/usr/bin/python3 -V
 /opt/rh/rh-python36/root/usr/bin/pip3 -V
 
+# Package Install AWS-CLI Tools (from Python Package Index (PyPI) Repository)
 /opt/rh/rh-python36/root/usr/bin/pip3 install awscli
 
 /opt/rh/rh-python36/root/usr/bin/pip3 show awscli
 
+# Configuration AWS-CLI tools [AWS-CLI/Python3]
 alternatives --install "/usr/bin/aws" aws "/opt/rh/rh-python36/root/usr/bin/aws" 1
 alternatives --display aws
 alternatives --install "/usr/bin/aws_completer" aws_completer "/opt/rh/rh-python36/root/usr/bin/aws_completer" 1
@@ -400,6 +426,114 @@ __EOF__
 sysctl -p
 
 sysctl -a | grep -ie "local_port" -ie "ipv6" | sort
+
+#-------------------------------------------------------------------------------
+# System Setting (Root Disk Extension)
+#-------------------------------------------------------------------------------
+
+# Disk Information(Partition) [parted -l]
+parted -l
+
+# Disk Information(MountPoint) [lsblk -al]
+lsblk -al
+
+# Disk Information(File System) [df -h]
+df -h
+
+# Configure cloud-init/growpart module
+cat /etc/cloud/cloud.cfg
+
+if [ ! $(grep -q growpart /etc/cloud/cloud.cfg) ]; then
+	sed -i 's/ - resizefs/ - growpart\n - resizefs/' /etc/cloud/cloud.cfg
+
+	cat /etc/cloud/cloud.cfg
+
+	# # Initial RAM disk reorganization of the currently running Linux-kernel
+	# ls -l /boot/
+	# lsinitrd /boot/initramfs-$(uname -r).img | grep -ie "growroot" -ie "growpart"
+	# dracut --force --add growroot /boot/initramfs-$(uname -r).img
+	# lsinitrd /boot/initramfs-$(uname -r).img | grep -ie "growroot" -ie "growpart"
+	# ls -l /boot/
+
+	# # Initial RAM disk reorganization of latest Linux-kernel
+	# eval $(grep ^DEFAULTKERNEL= /etc/sysconfig/kernel)
+	# LastestKernelVersion=$(rpm -qa ${DEFAULTKERNEL} | sed 's/^kernel-//' | sed 's/^uek-//' | sort --reverse | head -n 1)
+	# ls -l /boot/
+	# lsinitrd /boot/initramfs-${LastestKernelVersion}.img | grep -ie "growroot" -ie "growpart"
+	# dracut --force --add growroot /boot/initramfs-${LastestKernelVersion}.img
+	# lsinitrd /boot/initramfs-${LastestKernelVersion}.img | grep -ie "growroot" -ie "growpart"
+	# ls -l /boot/
+
+	# Extending a Partition and File System
+	# if [ $(df -hl | awk '{print $1}' | grep -w /dev/xvda1) ]; then
+	# 	echo "Amazon EC2 Instance type (Non-Nitro Hypervisor) :" $InstanceType
+
+	# 	# Extending a Partition
+	# 	parted -l
+	# 	lsblk -al
+	# 	LANG=C growpart --dry-run /dev/xvda 1
+	# 	LANG=C growpart /dev/xvda 1
+	# 	parted -l
+	# 	lsblk -al
+
+	# 	sleep 15
+
+	# 	# Extending the File System
+	# 	if [ $(lsblk -fl | grep xvda1 | awk '{print $2}') = "ext4" ]; then
+	# 		df -khT
+	# 		resize2fs -F /dev/xvda1
+	# 		df -khT
+	# 	elif [ $(lsblk -fl | grep xvda1 | awk '{print $2}') = "xfs" ]; then
+	# 		df -khT
+	# 		xfs_growfs -d /
+	# 		df -khT
+	# 	else
+	# 		df -khT
+	# 		resize2fs -F /dev/xvda1
+	# 		df -khT
+	# 	fi
+
+	# 	sleep 30
+
+	# elif [ $(df -hl | awk '{print $1}' | grep -w /dev/nvme0n1p1) ]; then
+	# 	echo "Amazon EC2 Instance type (Nitro Hypervisor) :" $InstanceType
+
+	# 	# Extending a Partition
+	# 	parted -l
+	# 	lsblk -al
+	# 	LANG=C growpart --dry-run /dev/nvme0n1 1
+	# 	LANG=C growpart /dev/nvme0n1 1
+	# 	parted -l
+	# 	lsblk -al
+
+	# 	sleep 15
+
+	# 	# Extending the File System
+	# 	if [ $(lsblk -fl | grep nvme0n1p1 | awk '{print $2}') = "ext4" ]; then
+	# 		df -khT
+	# 		resize2fs -F /dev/nvme0n1p1
+	# 		df -khT
+	# 	elif [ $(lsblk -fl | grep nvme0n1p1 | awk '{print $2}') = "xfs" ]; then
+	# 		df -khT
+	# 		xfs_growfs -d /
+	# 		df -khT
+	# 	else
+	# 		df -khT
+	# 		resize2fs -F /dev/nvme0n1p1
+	# 		df -khT
+	# 	fi
+
+	# 	sleep 30
+
+	# else
+	# 	echo "Amazon EC2 Instance type :" $InstanceType
+
+	# 	parted -l
+	# 	lsblk -al
+
+	# 	df -khT
+	# fi
+fi
 
 #-------------------------------------------------------------------------------
 # For normal termination of SSM "Run Command"
