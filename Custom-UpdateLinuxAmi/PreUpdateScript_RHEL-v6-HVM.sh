@@ -88,8 +88,23 @@ done
 # Checking repository information
 yum repolist all
 
-# yum repository metadata Clean up
+# Red Hat Update Infrastructure Client Package Update
 yum clean all
+yum update -y rh-amazon-rhui-client
+
+# Get Yum Repository List (Exclude Yum repository related to "beta, debug, source, test")
+repolist=$(yum repolist all | grep -ie "enabled" -ie "disabled" | grep -ve "Loaded plugins" -ve "beta" -ve "debug" -ve "source" -ve "test" | awk '{print $1}' | awk '{ sub("/.*$",""); print $0; }' | sort)
+
+# Enable Yum Repository Data from RHUI (Red Hat Update Infrastructure)
+for repo in $repolist
+do
+	echo "[Target repository Name (Enable yum repository)] :" $repo
+	yum-config-manager --enable ${repo}
+	sleep 3
+done
+
+# Checking repository information
+yum repolist all
 
 # RHEL/RHUI repository package [yum command]
 for repo in $repolist
@@ -113,8 +128,8 @@ yum update -y
 yum install -y acpid bind-utils blktrace crash-trace-command crypto-utils curl dstat ebtables ethtool expect gdisk git hdparm intltool iotop kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nmap numactl psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump traceroute tree unzip util-linux-ng vim-enhanced wget zip zsh
 yum install -y cifs-utils nfs-utils nfs4-acl-tools
 yum install -y iscsi-initiator-utils lsscsi scsi-target-utils sdparm sg3_utils
-yum install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils
-yum install -y pcp pcp-manager pcp-pmda* pcp-system-tools
+yum install -y setroubleshoot-server "selinux-policy*" setools-console checkpolicy policycoreutils
+yum install -y pcp pcp-manager "pcp-pmda*" pcp-system-tools
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 yum install -y redhat-lsb-core redhat-support-tool redhat-access-insights
@@ -159,7 +174,7 @@ yum clean all
 yum --disablerepo="*" --enablerepo="epel" list available > /tmp/command-log_yum_repository-package-list_epel.txt
 
 # Package Install RHEL System Administration Tools (from EPEL Repository)
-yum --enablerepo=epel install -y bash-completion fio iperf3 jq moreutils zstd
+yum --enablerepo=epel install -y bash-completion fio inotify-tools iperf3 jq moreutils zstd
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData

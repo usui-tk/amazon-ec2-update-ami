@@ -47,14 +47,17 @@ dnf list all > /tmp/command-log_dnf_repository-package-list.txt
 # Default repository package group [dnf command]
 dnf group list -v > /tmp/command-log_dnf_repository-package-group-list.txt
 
-# systemd service config
-systemctl list-unit-files --all --no-pager > /tmp/command-log_systemctl_list-unit-files.txt
-
 # Default repository list [dnf command]
 dnf repolist all > /tmp/command-log_dnf_repository-list.txt
 
 # Default repository module [dnf command]
 dnf module list > /tmp/command-log_dnf_module-list.txt
+
+# systemd unit files
+systemctl list-unit-files --all --no-pager > /tmp/command-log_systemctl_list-unit-files.txt
+
+# systemd service config
+systemctl list-units --type=service --all --no-pager > /tmp/command-log_systemctl_list-service-config.txt
 
 #-------------------------------------------------------------------------------
 # Default Package Update
@@ -93,8 +96,25 @@ done
 dnf repolist all
 dnf module list
 
-# Cleanup repository information
+# Red Hat Update Infrastructure Client Package Update
 dnf clean all
+dnf update -y rh-amazon-rhui-client
+dnf update -y dnf dnf-data dnf-utils
+
+# Get Dnf/Yum Repository List (Exclude Dnf/Yum repository related to "beta, debug, source, test")
+repolist=$(dnf repolist all --quiet | grep -ie "enabled" -ie "disabled" | grep -ve "beta" -ve "debug" -ve "source" -ve "test" | awk '{print $1}' | awk '{ sub("/.*$",""); print $0; }' | sort)
+
+# Enable Dnf/Yum Repository Data from RHUI (Red Hat Update Infrastructure)
+for repo in $repolist
+do
+	echo "[Target repository Name (Enable dnf/yum repository)] :" $repo
+	dnf config-manager --enable ${repo}
+	sleep 3
+done
+
+# Checking repository information
+dnf repolist all
+dnf module list
 
 # RHEL/RHUI repository package [dnf command]
 for repo in $repolist
@@ -115,11 +135,11 @@ dnf update -y
 #-------------------------------------------------------------------------------
 
 # Package Install RHEL System Administration Tools (from Red Hat Official Repository)
-dnf install -y acpid arptables bash-completion bc bcc bcc-tools bind-utils blktrace bpftool crash-trace-command crypto-policies curl dstat ebtables ethtool expect fio gdisk git gnutls-utils hdparm intltool iotop iperf3 iptraf-ng jq kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nftables nmap numactl nvme-cli nvmetcli patchutils pmempool psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump tlog traceroute tree unzip util-linux vdo vim-enhanced wget xfsdump xfsprogs zip zsh
+dnf install -y acpid arptables bash-completion bc bcc bcc-tools bind-utils blktrace bpftool crash-trace-command crypto-policies curl dstat ebtables ethtool expect fio gdisk git gnutls-utils hdparm intltool iotop iperf3 iptraf-ng jq kexec-tools libicu lsof lvm2 lzop man-pages mcelog mdadm mlocate mtr nc ncompress net-snmp-utils nftables nmap numactl nvme-cli nvmetcli patchutils pmempool psacct psmisc rsync smartmontools sos strace symlinks sysfsutils sysstat tcpdump time tlog traceroute tree unzip util-linux util-linux-user vdo vim-enhanced wget xfsdump xfsprogs zip zsh
 dnf install -y cifs-utils nfs-utils nfs4-acl-tools
 dnf install -y iscsi-initiator-utils lsscsi sg3_utils
-dnf install -y setroubleshoot-server selinux-policy* setools-console checkpolicy policycoreutils policycoreutils-python-utils policycoreutils-restorecond
-dnf install -y pcp pcp-export-pcp2json pcp-manager pcp-pmda* pcp-selinux pcp-system-tools pcp-zeroconf
+dnf install -y setroubleshoot-server "selinux-policy*" setools-console checkpolicy policycoreutils policycoreutils-python-utils policycoreutils-restorecond
+dnf install -y pcp pcp-export-pcp2json pcp-manager "pcp-pmda*" pcp-selinux pcp-system-tools pcp-zeroconf
 
 # Package Install Red Hat Enterprise Linux support tools (from Red Hat Official Repository)
 dnf install -y redhat-lsb-core redhat-support-tool insights-client
@@ -172,10 +192,10 @@ dnf repository-packages epel list > /tmp/command-log_dnf_repository-package-list
 dnf repository-packages epel-playground list > /tmp/command-log_dnf_repository-package-list_epel-playground.txt
 
 # Package Install RHEL System Administration Tools (from EPEL Repository)
-dnf --enablerepo=epel install -y atop iftop zstd
+dnf --enablerepo=epel install -y atop collectd collectd-utils iftop inotify-tools zstd
 
 # Package Install RHEL System Administration Tools (from EPEL-Playground Repository)
-# dnf --enablerepo=epel-playground install -y collectd collectd-python collectd-utils moreutils moreutils-parallel
+# dnf --enablerepo=epel-playground install -y moreutils moreutils-parallel
 
 #-------------------------------------------------------------------------------
 # Set AWS Instance MetaData
