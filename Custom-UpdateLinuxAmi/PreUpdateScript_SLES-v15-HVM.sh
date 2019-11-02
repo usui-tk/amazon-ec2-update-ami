@@ -12,7 +12,7 @@ exec > >(tee /var/log/user-data_bootstrap.log || logger -t user-data -s 2> /dev/
 #    https://www.suse.com/ja-jp/documentation/sles-15/
 #    https://www.suse.com/documentation/suse-best-practices/
 #    https://forums.suse.com/forumdisplay.php?94-Amazon-EC2
-#    
+#
 #    https://scc.suse.com/packages/?name=SUSE%20Linux%20Enterprise%20Server&version=15.1&arch=x86_64&query=&module=
 #
 #    https://susepubliccloudinfo.suse.com/v1/amazon/images/active.json
@@ -175,9 +175,9 @@ SapFlag=$(find /etc/zypp/repos.d/ -name "*SLE-Product-SLES_SAP15*" | wc -l)
 if [ -n "$VERSION_ID" ]; then
 	if [ "${VERSION_ID}" = "15.2" ]; then
 		echo "SUSE Linux Enterprise Server 15 SP2"
-		
+
 		zypper --quiet --non-interactive install python3-susepubliccloudinfo
-		
+
 		if [ $SapFlag -gt 0 ]; then
 			echo "SUSE Linux Enterprise Server for SAP Applications 15"
 			#  zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services
@@ -191,7 +191,7 @@ if [ -n "$VERSION_ID" ]; then
 			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Instance-Tools
 			zypper --quiet --non-interactive install patterns-public-cloud-15-Amazon-Web-Services-Tools
 		fi
-		
+
 	elif [ "${VERSION_ID}" = "15.1" ]; then
 		echo "SUSE Linux Enterprise Server 15 SP1"
 
@@ -277,7 +277,7 @@ PrivateIp=$(curl -s "http://169.254.169.254/latest/meta-data/local-ipv4")
 AmiId=$(curl -s "http://169.254.169.254/latest/meta-data/ami-id")
 
 # IAM Role Information
-if [ $(compgen -ac | sort | uniq | grep jq) ]; then
+if [ $(compgen -ac | sort | uniq | grep -x jq) ]; then
 	RoleArn=$(curl -s "http://169.254.169.254/latest/meta-data/iam/info" | jq -r '.InstanceProfileArn')
 	RoleName=$(echo $RoleArn | cut -d '/' -f 2)
 fi
@@ -289,7 +289,7 @@ fi
 aws --version
 
 # Setting AWS-CLI default Region & Output format
-aws configure << __EOF__ 
+aws configure << __EOF__
 
 
 
@@ -464,13 +464,13 @@ if [ $SapFlag -gt 0 ]; then
 	# tuned-adm profile saptune
 	tuned-adm active
 else
-	echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"  
+	echo "SUSE Linux Enterprise Server 15 (non SUSE Linux Enterprise Server for SAP Applications 15)"
 	# Configure Tuned software (select profile - throughput-performance)
 	tuned-adm list
 	tuned-adm active
-	tuned-adm profile throughput-performance 
+	tuned-adm profile throughput-performance
 	tuned-adm active
-fi 
+fi
 
 #-------------------------------------------------------------------------------
 # System Setting
