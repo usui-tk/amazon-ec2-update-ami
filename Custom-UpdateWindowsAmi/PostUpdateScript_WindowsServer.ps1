@@ -5,14 +5,14 @@ Set-Variable -Name TEMP_DIR -Value "$Env:SystemRoot\Temp\*"
 # Function
 function Format-Message {
     param([string]$message)
-    
+
     $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss.fffffff zzz"
     "$timestamp - $message"
 }
 
 function Write-Message {
     param([string]$message)
-    
+
     Format-Message $message
 }
 

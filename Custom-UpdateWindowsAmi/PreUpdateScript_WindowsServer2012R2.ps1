@@ -9,14 +9,14 @@ Set-Variable -Name TRANSCRIPT_LOG -Value "$LOGS_DIR\userdata-transcript.log"
 # Function
 function Format-Message {
     param([string]$message)
-    
+
     $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss.fffffff zzz"
     "$timestamp - $message"
 }
 
 function Write-Log {
     param([string]$message, $log = $USERDATA_LOG)
-    
+
     Format-Message $message | Out-File $log -Append -Force
 }
 
@@ -40,7 +40,7 @@ function Get-WebContentToFile {
     Set-Variable -Name DownloadStatus -Value ($Null)
     Set-Variable -Name ProgressPreference -Value "SilentlyContinue"
     Write-Log ("# [Get-WebContentToFile] Download processing start    [" + $Uri + "] -> [" + $OutFile + "]" )
-    $DownloadStatus = Measure-Command { (Invoke-WebRequest -Uri $Uri -UseBasicParsing -OutFile $OutFile) } 
+    $DownloadStatus = Measure-Command { (Invoke-WebRequest -Uri $Uri -UseBasicParsing -OutFile $OutFile) }
     Write-Log ("# [Get-WebContentToFile] Download processing time      ( " + $DownloadStatus.TotalSeconds + " seconds )" )
     Write-Log ("# [Get-WebContentToFile] Download processing complete [" + $Uri + "] -> [" + $OutFile + "]" )
 }
@@ -57,7 +57,7 @@ function Get-WindowsServerInformation {
     Set-Variable -Name serverOptions -Value @{ 0 = "Undefined"; 12 = $serverCore; 13 = $serverCore;
         14 = $serverCore; 29 = $serverCore; 39 = $serverCore; 40 = $serverCore; 41 = $serverCore; 43 = $serverCore;
         44 = $serverCore; 45 = $serverCore; 46 = $serverCore; 63 = $serverCore; 143 = $nanoServer; 144 = $nanoServer;
-        147 = $serverCore; 148 = $serverCore; 
+        147 = $serverCore; 148 = $serverCore;
     }
 
     # Get ProductName and BuildLabEx from HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion
@@ -116,7 +116,7 @@ Set-Location -Path $BASE_DIR
 Write-LogSeparator "Start Script Execution Bootstrap Script"
 
 
-# Exe-1 
+# Exe-1
 Write-LogSeparator "Change PowerShell SecurityProtocol"
 [System.Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12;
 
@@ -164,7 +164,7 @@ if (Test-Path -Path $HKLM_FolderOptionRegistry) {
 
 if ( -Not (Test-Path -Path $HKCU_FolderOptionRegistry ) ) {
     Write-Log ("# New-Item - " + $HKCU_FolderOptionRegistry)
-    New-Item -Path $HKCU_FolderOptionRegistry -Force 
+    New-Item -Path $HKCU_FolderOptionRegistry -Force
     Start-Sleep -Seconds 5
 }
 
@@ -260,11 +260,11 @@ if (Test-Path -Path $HKLM_DesktopIconRegistrySetting) {
 
 if ( -Not (Test-Path -Path $HKCU_DesktopIconRegistry ) ) {
     Write-Log ("# New-Item - " + $HKCU_DesktopIconRegistry)
-    New-Item -Path $HKCU_DesktopIconRegistry -Force 
+    New-Item -Path $HKCU_DesktopIconRegistry -Force
     Start-Sleep -Seconds 5
 
     Write-Log ("# New-Item - " + $HKCU_DesktopIconRegistrySetting)
-    New-Item -Path $HKCU_DesktopIconRegistrySetting -Force 
+    New-Item -Path $HKCU_DesktopIconRegistrySetting -Force
     Start-Sleep -Seconds 5
 }
 
@@ -433,9 +433,9 @@ Start-Process -FilePath "$TOOL_DIR\EC2Rescue_latest\EC2RescueCmd.exe" -Verb runa
 Write-Log "# Execution System Utility (EC2Rescue) - Complete"
 
 Write-LogSeparator "Complete Script Execution Bootstrap Script"
-Copy-Item -Path $USERDATA_LOG -Destination $LOGS_DIR 
+Copy-Item -Path $USERDATA_LOG -Destination $LOGS_DIR
 Copy-Item -Path "$TEMP_DIR\userdata-transcript-*.log" -Destination $LOGS_DIR
-Copy-Item -Path "$TEMP_DIR\*.tmp" -Destination $LOGS_DIR 
+Copy-Item -Path "$TEMP_DIR\*.tmp" -Destination $LOGS_DIR
 Stop-Transcript
 Start-Sleep -Seconds 15
 

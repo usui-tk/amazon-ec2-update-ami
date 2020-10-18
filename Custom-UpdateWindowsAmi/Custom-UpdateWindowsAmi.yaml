@@ -1,73 +1,73 @@
 schemaVersion: "0.3"
 description: "Updates a Microsoft Windows AMI. By default it will install all Windows updates, Amazon software, and Amazon drivers. It will then sysprep and create a new AMI. Supports Windows Server 2008 R2 and greater."
 assumeRole: "{{ AutomationAssumeRole }}"
-parameters: 
-  SourceAmiId: 
+parameters:
+  SourceAmiId:
     type: String
     description: "(Required) The source Amazon Machine Image ID."
-  IamInstanceProfileName: 
+  IamInstanceProfileName:
     type: String
     description: "(Required) The name of the role that enables Systems Manager to manage the instance."
     default: ManagedInstanceProfile
-  AutomationAssumeRole: 
+  AutomationAssumeRole:
     type: String
     description: "(Required) The ARN of the role that allows Automation to perform the actions on your behalf."
     default: "arn:aws:iam::{{global:ACCOUNT_ID}}:role/AutomationServiceRole"
-  TargetAmiName: 
+  TargetAmiName:
     type: String
     description: "(Optional) The name of the new AMI that will be created. Default is a system-generated string including the source AMI id, and the creation time and date."
     default: "UpdateWindowsAmi_from_{{SourceAmiId}}_on_{{global:DATE_TIME}}"
-  InstanceType: 
+  InstanceType:
     type: String
     description: "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is c5n.xlarge."
     default: "c5n.xlarge"
-  SubnetId: 
+  SubnetId:
     type: String
     description: "(Optional) Specify the SubnetId if you want to launch into a specific subnet."
     default: ""
-  IncludeKbs: 
+  IncludeKbs:
     type: String
     description: "(Optional) Specify one or more Microsoft Knowledge Base (KB) article IDs to include. You can install multiple IDs using comma-separated values. Valid formats: KB9876543 or 9876543."
     default: ""
-  ExcludeKbs: 
+  ExcludeKbs:
     type: String
     description: "(Optional) Specify one or more Microsoft Knowledge Base (KB) article IDs to exclude. You can exclude multiple IDs using comma-separated values. Valid formats: KB9876543 or 9876543."
     default: ""
-  Categories: 
+  Categories:
     type: String
     description: "(Optional) Specify one or more update categories. You can filter categories using comma-separated values. Options: Application, Connectors, CriticalUpdates, DefinitionUpdates, DeveloperKits, Drivers, FeaturePacks, Guidance, Microsoft, SecurityUpdates, ServicePacks, Tools, UpdateRollups, Updates. Valid formats include a single entry, for example: CriticalUpdates. Or you can specify a comma separated list: CriticalUpdates,SecurityUpdates. NOTE: There cannot be any spaces around the commas."
     default: ""
-  SeverityLevels: 
+  SeverityLevels:
     type: String
     description: "(Optional) Specify one or more MSRC severity levels associated with an update. You can filter severity levels using comma-separated values. By default patches for all security levels are selected. If value supplied, the update list is filtered by those values. Options: Critical, Important, Low, Moderate or Unspecified. Valid formats include a single entry, for example: Critical. Or, you can specify a comma separated list: Critical,Important,Low."
     default: ""
-  PublishedDaysOld: 
+  PublishedDaysOld:
     type: String
     default: ""
     description: "(Optional) Specify the amount of days old the updates must be from the published date.  For example, if 10 is specified, any updates that were found during the Windows Update search that have been published 10 or more days ago will be returned."
-  PublishedDateAfter: 
+  PublishedDateAfter:
     type: String
     default: ""
     description: "(Optional) Specify the date that the updates should be published after.  For example, if 01/01/2017 is specified, any updates that were found during the Windows Update search that have been published on or after 01/01/2017 will be returned."
-  PublishedDateBefore: 
+  PublishedDateBefore:
     type: String
     default: ""
     description: "(Optional) Specify the date that the updates should be published before.  For example, if 01/01/2017 is specified, any updates that were found during the Windows Update search that have been published on or before 01/01/2017 will be returned."
-  PreUpdateScript: 
+  PreUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute prior to installing OS updates."
     default: ""
-  PostUpdateScript: 
+  PostUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute after installing OS updates."
     default: ""
-mainSteps: 
+mainSteps:
   - name: LaunchInstance
     action: "aws:runInstances"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       ImageId: "{{ SourceAmiId  }}"
       InstanceType: "{{ InstanceType }}"
       MinInstanceCount: 1
@@ -79,29 +79,29 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: DescribeManagedInstanceForInstanceId
     action: "aws:executeAwsApi"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: InstanceId
         Selector: "$.InstanceInformationList[0].InstanceId"
   - name: DescribeManagedInstanceForPlatformType
@@ -109,14 +109,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformType
         Selector: "$.InstanceInformationList[0].PlatformType"
   - name: DescribeManagedInstanceForPlatformName
@@ -124,14 +124,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformName
         Selector: "$.InstanceInformationList[0].PlatformName"
   - name: DescribeManagedInstanceForPlatformVersion
@@ -139,14 +139,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformVersion
         Selector: "$.InstanceInformationList[0].PlatformVersion"
   - name: OSCompatibilityCheck
@@ -154,13 +154,13 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 7200
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunPowerShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         executionTimeout: 7200
-        commands: 
+        commands:
           - "[System.Version]$osversion = [System.Environment]::OSVersion.Version"
           - "if(($osversion.Major -eq 6 -and $osversion.Minor -ge 1) -or ($osversion.Major -ge 10)) {"
           - "  Write-Host 'This OS is supported for use with this automation document.'"
@@ -173,12 +173,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 7200
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunPowerShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "$zipFilename = 'AWSUpdateWindowsInstance_1_4_4_0.zip'"
           - "$zipFileHash = 'CD337ADCFBA463DE895B8D8248A3991940ABB03ADF8525ECA1302385D6A1DDA6'"
           - "$moduleName = 'AWSUpdateWindowsInstance'"
@@ -342,22 +342,22 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-UpdateSSMAgent"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         allowDowngrade: false
   - name: UpdateAWSPVDriver
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-ConfigureAWSPackage"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         name: AWSPVDriver
         action: Install
   - name: UpdateAWSEnaNetworkDriver
@@ -365,11 +365,11 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-ConfigureAWSPackage"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         name: AwsEnaNetworkDriver
         action: Install
   - name: UpdateAWSNVMe
@@ -377,11 +377,11 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-ConfigureAWSPackage"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         name: AWSNVMe
         action: Install
   - name: UpdateAwsVssComponents
@@ -389,11 +389,11 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-ConfigureAWSPackage"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         name: AwsVssComponents
         action: Install
   - name: UpdateEC2Rescue
@@ -401,11 +401,11 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-ConfigureAWSPackage"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         name: "AWSSupport-EC2Rescue"
         action: Install
   - name: ConfigureforHostnameAndOsRebootBySSMAutomation
@@ -413,12 +413,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 7200
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunPowerShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "# Setting Hostname Parameter"
           - "Set-Variable -Name PrivateIp -Value (Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/local-ipv4")"
           - "Set-Variable -Name NewHostname -Value ($PrivateIp.Replace(".", "-"))"
@@ -441,44 +441,44 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1200
-    inputs: 
+    inputs:
       Duration: PT5M
   - name: WaitUntilSsmAgentIsOnline1
     action: "aws:assertAwsResourceProperty"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: ScanWindowsUpdates
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Continue
     timeoutSeconds: 14400
-    inputs: 
+    inputs:
       DocumentName: "AWS-InstallWindowsUpdates"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         Action: Scan
   - name: InstallWindowsUpdates
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Continue
     timeoutSeconds: 14400
-    inputs: 
+    inputs:
       DocumentName: "AWS-InstallWindowsUpdates"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         Action: Install
         IncludeKbs: "{{ IncludeKbs }}"
         ExcludeKbs: "{{ ExcludeKbs }}"
@@ -492,30 +492,30 @@ mainSteps:
     maxAttempts: 3
     onFailure: Continue
     timeoutSeconds: 14400
-    inputs: 
+    inputs:
       DocumentName: "AWS-InstallWindowsUpdates"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         Action: Scan
   - name: RunPreUpdateScript
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunPowerShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PreUpdateScript }}"
   - name: StopInstanceforPreUpdateScript
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 3600
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: stopped
   - name: StartInstanceforPreUpdateScript
@@ -523,8 +523,8 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 3600
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: running
   - name: WaitTimeforPreUpdateScript
@@ -532,52 +532,52 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1200
-    inputs: 
+    inputs:
       Duration: PT5M
   - name: WaitUntilSsmAgentIsOnline2
     action: "aws:assertAwsResourceProperty"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: RunPostUpdateScript
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunPowerShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PostUpdateScript }}"
   - name: RunSysprepGeneralize
     action: "aws:runCommand"
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWSEC2-RunSysprep"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         Id: "{{automation:EXECUTION_ID}}"
   - name: StopInstanceforCreateImage
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 7200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       CheckStateOnly: false
       DesiredState: stopped
@@ -585,7 +585,7 @@ mainSteps:
     action: "aws:createImage"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       InstanceId: "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       ImageName: "{{ TargetAmiName }}"
       NoReboot: true
@@ -594,9 +594,9 @@ mainSteps:
     action: "aws:changeInstanceState"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: terminated
-outputs: 
+outputs:
   - "CreateImage.ImageId"
