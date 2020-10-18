@@ -1,45 +1,45 @@
 schemaVersion: "0.3"
 description: "Updates AMI with Linux distribution packages and Amazon software. For details,see https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-awsdocs-linux.html"
 assumeRole: "{{AutomationAssumeRole}}"
-parameters: 
-  SourceAmiId: 
+parameters:
+  SourceAmiId:
     type: String
     description: "(Required) The source Amazon Machine Image ID."
-  SubnetId: 
+  SubnetId:
     type: String
     description: "(Required) Specify the SubnetId if you want to launch EC2 instance in a specific subnet."
     default: ""
-  IamInstanceProfileName: 
+  IamInstanceProfileName:
     type: String
     description: "(Required) The instance profile that enables Systems Manager (SSM) to manage the instance."
     default: ManagedInstanceProfile
-  AutomationAssumeRole: 
+  AutomationAssumeRole:
     type: String
     description: "(Required) The ARN of the role that allows Automation to perform the actions on your behalf."
     default: "arn:aws:iam::{{global:ACCOUNT_ID}}:role/AutomationServiceRole"
-  TargetAmiName: 
+  TargetAmiName:
     type: String
     description: "(Optional) The name of the new AMI that will be created. Default is a system-generated string including the source AMI id, and the creation time and date."
     default: "UpdateLinuxAmi_from_{{SourceAmiId}}_on_{{global:DATE_TIME}}"
-  InstanceType: 
+  InstanceType:
     type: String
     description: "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is c5.xlarge."
     default: "c5.xlarge"
-  PreUpdateScript: 
+  PreUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute prior to installing OS updates."
     default: ""
-  PostUpdateScript: 
+  PostUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute after installing OS updates."
     default: ""
-mainSteps: 
+mainSteps:
   - name: LaunchInstance
     action: "aws:runInstances"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       ImageId: "{{ SourceAmiId }}"
       InstanceType: "{{ InstanceType }}"
       UserData: IyEvYmluL2Jhc2ggLXYNCg0Kc2V0IC1lIC14DQoNCiMgTG9nZ2VyDQpleGVjID4gPih0ZWUgL3Zhci9sb2cvdXNlci1kYXRhX3NzbS1hZ2VudF9pbnN0YWxsYXRpb24ubG9nIHx8IGxvZ2dlciAtdCB1c2VyLWRhdGEgLXMgMj4gL2Rldi9jb25zb2xlKSAyPiYxDQoNCiMtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIERlZmluZSBGdW5jdGlvbg0KIy0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCg0KZnVuY3Rpb24gZ2V0X2NvbnRlbnRzKCkgew0KICAgIGlmIFsgLXggIiQod2hpY2ggY3VybCkiIF07IHRoZW4NCiAgICAgICAgY3VybCAtcyAtZiAiJDEiDQogICAgZWxpZiBbIC14ICIkKHdoaWNoIHdnZXQpIiBdOyB0aGVuDQogICAgICAgIHdnZXQgIiQxIiAtTyAtDQogICAgZWxzZQ0KICAgICAgICBkaWUgIk5vIGRvd25sb2FkIHV0aWxpdHkgKGN1cmwsIHdnZXQpIg0KICAgIGZpDQp9DQoNCmZ1bmN0aW9uIGxvd2VyY2FzZSgpew0KICAgIGVjaG8gIiQxIiB8IHNlZCAieS9BQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWi9hYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ei8iDQp9DQoNCmZ1bmN0aW9uIHVwcGVyY2FzZSgpew0KICAgIGVjaG8gIiQxIiB8IHNlZCAieS9hYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ei9BQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWi8iDQp9DQoNCmZ1bmN0aW9uIGdldF9vc19pbmZvICgpIHsNCiAgICBPUz1gbG93ZXJjYXNlIFxgdW5hbWVcYGANCiAgICBLRVJORUw9YHVuYW1lIC1yYA0KICAgIE1BQ0g9YHVuYW1lIC1tYA0KICAgIEtFUk5FTF9HUk9VUD0kKGVjaG8gJEtFUk5FTCB8IGN1dCAtZjEtMiAtZCcuJykNCg0KICAgIGlmIFsgIiR7T1N9IiA9ICJsaW51eCIgXSA7IHRoZW4NCiAgICAgIGlmIFsgLWYgL2V0Yy9vcy1yZWxlYXNlIF07IHRoZW4NCiAgICAgICAgICBzb3VyY2UgL2V0Yy9vcy1yZWxlYXNlDQogICAgICAgICAgRElTVF9UWVBFPSRJRA0KICAgICAgICAgIERJU1Q9JE5BTUUNCiAgICAgICAgICBSRVY9JFZFUlNJT05fSUQNCiAgICAgIGVsaWYgWyAtZiAvZXRjL2NlbnRvcy1yZWxlYXNlIF07IHRoZW4NCiAgICAgICAgICBESVNUX1RZUEU9J0NlbnRPUycNCiAgICAgICAgICBESVNUPWBjYXQgL2V0Yy9jZW50b3MtcmVsZWFzZSB8IHNlZCBzL1wgcmVsZWFzZS4qLy9gDQogICAgICAgICAgUkVWPWBjYXQgL2V0Yy9jZW50b3MtcmVsZWFzZSB8IHNlZCBzLy4qcmVsZWFzZVwgLy8gfCBzZWQgcy9cIC4qLy9gDQogICAgICBlbGlmIFsgLWYgL2V0Yy9yZWRoYXQtcmVsZWFzZSBdOyB0aGVuDQogICAgICAgICAgRElTVF9UWVBFPSdSSEVMJw0KICAgICAgICAgIERJU1Q9YGNhdCAvZXRjL3JlZGhhdC1yZWxlYXNlIHwgc2VkIHMvXCByZWxlYXNlLiovL2ANCiAgICAgICAgICBSRVY9YGNhdCAvZXRjL3JlZGhhdC1yZWxlYXNlIHwgc2VkIHMvLipyZWxlYXNlXCAvLyB8IHNlZCBzL1wgLiovL2ANCiAgICAgIGVsaWYgWyAtZiAvZXRjL3N5c3RlbS1yZWxlYXNlIF07IHRoZW4NCiAgICAgICAgICBpZiBncmVwICJBbWF6b24gTGludXgiIC9ldGMvc3lzdGVtLXJlbGVhc2U7IHRoZW4NCiAgICAgICAgICAgIERJU1RfVFlQRT0nQW1hem9uJw0KICAgICAgICAgIGZpDQogICAgICAgICAgRElTVD1gY2F0IC9ldGMvc3lzdGVtLXJlbGVhc2UgfCBzZWQgcy9cIHJlbGVhc2UuKi8vYA0KICAgICAgICAgIFJFVj1gY2F0IC9ldGMvc3lzdGVtLXJlbGVhc2UgfCBzZWQgcy8uKnJlbGVhc2VcIC8vIHwgc2VkIHMvXCAuKi8vYA0KICAgICAgZWxzZQ0KICAgICAgICAgIERJU1RfVFlQRT0iIg0KICAgICAgICAgIERJU1Q9IiINCiAgICAgICAgICBSRVY9IiINCiAgICAgIGZpDQogICAgZmkNCg0KICAgIGlmIFtbIC16ICIke0RJU1R9IiB8fCAteiAiJHtESVNUX1RZUEV9IiBdXTsgdGhlbg0KICAgICAgIGVjaG8gIlVuc3VwcG9ydGVkIGRpc3RyaWJ1dGlvbjogJHtESVNUfSBhbmQgZGlzdHJpYnV0aW9uIHR5cGU6ICR7RElTVF9UWVBFfSINCiAgICAgICBleGl0IDENCiAgICBmaQ0KDQogICAgTE9XRVJDQVNFX0RJU1RfVFlQRT1gbG93ZXJjYXNlICRESVNUX1RZUEVgDQogICAgVU5JUV9PU19JRD0iJHtMT1dFUkNBU0VfRElTVF9UWVBFfS0ke0tFUk5FTH0tJHtNQUNIfSINCiAgICBVTklRX1BMQVRGT1JNX0lEPSIke0xPV0VSQ0FTRV9ESVNUX1RZUEV9LSR7S0VSTkVMX0dST1VQfS4iDQp9DQoNCmZ1bmN0aW9uIGV4ZWNfc3NtX2FnZW50X2luc3RhbGxlcl9zY3JpcHQgKCkgew0KICAgIGNkIC90bXANCiAgICBGSUxFX1NJWkU9MA0KICAgIE1BWF9SRVRSWV9DT1VOVD0zDQogICAgUkVUUllfQ09VTlQ9MA0KDQogICAgd2hpbGUgWyAkUkVUUllfQ09VTlQgLWx0ICRNQVhfUkVUUllfQ09VTlQgXSA7IGRvDQogICAgICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogRG93bmxvYWRpbmcgc2NyaXB0IGZyb20gJFNDUklQVF9VUkwNCiAgICAgIGdldF9jb250ZW50cyAiJFNDUklQVF9VUkwiID4gIiRTQ1JJUFRfTkFNRSINCiAgICAgIEZJTEVfU0laRT0kKGR1IC1rIC90bXAvJFNDUklQVF9OQU1FIHwgY3V0IC1mMSkNCiAgICAgIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBGaW5pc2hlZCBkb3dubG9hZGluZyBzY3JpcHQsIHNpemU6ICRGSUxFX1NJWkUNCiAgICAgIGlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogICAgICAgIGJyZWFrDQogICAgICBlbHNlDQogICAgICAgIGlmIFtbICRSRVRSWV9DT1VOVCAtbHQgTUFYX1JFVFJZX0NPVU5UIF1dOyB0aGVuDQogICAgICAgICAgUkVUUllfQ09VTlQ9JCgoUkVUUllfQ09VTlQrMSkpOw0KICAgICAgICAgIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBGaWxlU2l6ZSBpcyAwLCByZXRyeUNvdW50OiAkUkVUUllfQ09VTlQNCiAgICAgICAgZmkNCiAgICAgIGZpIA0KICAgIGRvbmUNCg0KICAgIGlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogICAgICBjaG1vZCAreCAiJFNDUklQVF9OQU1FIg0KICAgICAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IFJ1bm5pbmcgVXBkYXRlU1NNQWdlbnQgc2NyaXB0IG5vdyAuLi4uDQogICAgICBiYXNoIC1leCAuLyIkU0NSSVBUX05BTUUiIC0tcmVnaW9uICIkUkVHSU9OIg0KICAgIGVsc2UNCiAgICAgIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBVbmFibGUgdG8gZG93bmxvYWQgc2NyaXB0LCBxdWl0dGluZyAuLi4uDQogICAgZmkNCn0NCg0KZnVuY3Rpb24gaW5zdGFsbF9zc21fYWdlbnQgKCkgew0KDQogICAgIyBBbWF6b24gTGludXggRGlzdHJpYnV0aW9uDQogICAgaWYgWyAiJHtESVNUfSIgPSAiQW1hem9uIExpbnV4IEFNSSIgXSB8fCBbICIke0RJU1R9IiA9ICJBbWF6b24gTGludXgiIF0gfHwgWyAiJHtESVNUX1RZUEV9IiA9ICJhbXpuIiBdOyB0aGVuDQogICAgICBleGVjX3NzbV9hZ2VudF9pbnN0YWxsZXJfc2NyaXB0DQogICAgICBlY2hvICJDb21wbGV0ZSBTU00gQWdlbnQgSW5zdGFsbGVyIFNjcmlwdCAtIExpbnV4IGRpc3RyaWJ1dGlvbjogJHtESVNUfSAtICR7UkVWfSINCg0KICAgICMgUmVkIEhhdCBFbnRlcnByaXNlIExpbnV4IERpc3RyaWJ1dGlvbg0KICAgIGVsaWYgWyAiJHtESVNUfSIgPSAiUkhFTCIgXSB8fCBbICIke0RJU1R9IiA9ICJSZWQgSGF0IEVudGVycHJpc2UgTGludXggU2VydmVyIiBdIHx8IFsgIiR7RElTVF9UWVBFfSIgPSAicmhlbCIgXTsgdGhlbg0KICAgICAgZXhlY19zc21fYWdlbnRfaW5zdGFsbGVyX3NjcmlwdA0KICAgICAgZWNobyAiQ29tcGxldGUgU1NNIEFnZW50IEluc3RhbGxlciBTY3JpcHQgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gLSAke1JFVn0iDQoNCiAgICAjIENlbXRPUyBMaW51eCBEaXN0cmlidXRpb24NCiAgICBlbGlmIFsgIiR7RElTVH0iID0gIkNlbnRPUyIgXSB8fCBbICIke0RJU1RfVFlQRX0iID0gImNlbnRvcyIgXTsgdGhlbg0KICAgICAgZXhlY19zc21fYWdlbnRfaW5zdGFsbGVyX3NjcmlwdA0KICAgICAgZWNobyAiQ29tcGxldGUgU1NNIEFnZW50IEluc3RhbGxlciBTY3JpcHQgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gLSAke1JFVn0iDQoNCiAgICAjIFVidW50dSBMaW51eCBEaXN0cmlidXRpb24NCiAgICBlbGlmIFsgIiR7RElTVH0iID0gIlVidW50dSIgXSB8fCBbICIke0RJU1RfVFlQRX0iID0gInVidW50dSIgXTsgdGhlbg0KICAgICAgZXhlY19zc21fYWdlbnRfaW5zdGFsbGVyX3NjcmlwdA0KICAgICAgZWNobyAiQ29tcGxldGUgU1NNIEFnZW50IEluc3RhbGxlciBTY3JpcHQgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gLSAke1JFVn0iDQoNCiAgICAjIERlYmlhbiBHTlUvTGludXggRGlzdHJpYnV0aW9uDQogICAgZWxpZiBbICIke0RJU1R9IiA9ICJEZWJpYW4gR05VL0xpbnV4IiBdIHx8IFsgIiR7RElTVF9UWVBFfSIgPSAiZGViaWFuIiBdOyB0aGVuDQogICAgICBleGVjX3NzbV9hZ2VudF9pbnN0YWxsZXJfc2NyaXB0DQogICAgICBlY2hvICJDb21wbGV0ZSBTU00gQWdlbnQgSW5zdGFsbGVyIFNjcmlwdCAtIExpbnV4IGRpc3RyaWJ1dGlvbjogJHtESVNUfSAtICR7UkVWfSINCg0KICAgICMgU1VTRSBMaW51eCBFbnRlcnByaXNlIFNlcnZlciBEaXN0cmlidXRpb24NCiAgICBlbGlmIFsgIiR7RElTVH0iID0gIlNMRVMiIF0gfHwgWyAiJHtESVNUX1RZUEV9IiA9ICJzbGVzIiBdOyB0aGVuDQogICAgICB6eXBwZXIgLS1xdWlldCAtLW5vbi1pbnRlcmFjdGl2ZSAtLW5vLWdwZy1jaGVja3MgaW5zdGFsbCAiaHR0cHM6Ly9zMy5hbWF6b25hd3MuY29tL2VjMi1kb3dubG9hZHMtd2luZG93cy9TU01BZ2VudC9sYXRlc3QvbGludXhfYW1kNjQvYW1hem9uLXNzbS1hZ2VudC5ycG0iDQoNCiAgICAgIHJwbSAtcWkgYW1hem9uLXNzbS1hZ2VudA0KDQogICAgICBzeXN0ZW1jdGwgc3RhcnQgYW1hem9uLXNzbS1hZ2VudA0KDQogICAgICBzeXN0ZW1jdGwgZW5hYmxlIGFtYXpvbi1zc20tYWdlbnQNCiAgICAgIHN5c3RlbWN0bCBpcy1lbmFibGVkIGFtYXpvbi1zc20tYWdlbnQNCg0KICAgICAgZWNobyAiQ29tcGxldGUgU1NNIEFnZW50IEluc3RhbGwgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gLSAke1JFVn0iDQoNCiAgICAjIFVua25vd24gTGludXggRGlzdHJpYnV0aW9uDQogICAgZWxzZQ0KICAgICAgZWNobyAiVW5zdXBwb3J0ZWQgU1NNIEFnZW50IEluc3RhbGxlciBTY3JpcHQgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gYW5kIGRpc3RyaWJ1dGlvbiByZXZpc2lvbjogJHtSRVZ9Ig0KICAgIGZpDQp9DQoNCiMtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIE1haW4gUm91dGluZQ0KIy0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCg0KIyBjYWxsIHRoZSBvcyBpbmZvIGZ1bmN0aW9uIHRvIGdldCBkZXRhaWxzDQpnZXRfb3NfaW5mbw0KDQojIEluZm9ybWF0aW9uIExpbnV4IERpc3RyaWJ1dGlvbg0KS0VSTkVMX1ZFUlNJT049JCh1bmFtZSAtciApDQpLRVJORUxfR1JPVVA9JChlY2hvICIke0tFUk5FTF9WRVJTSU9OfSIgfCBjdXQgLWYgMS0yIC1kJy4nKQ0KS0VSTkVMX1ZFUlNJT05fV09fQVJDSD0kKGJhc2VuYW1lICR7S0VSTkVMX1ZFUlNJT059IC54ODZfNjQpDQoNCmVjaG8gIkRpc3RyaWJ1dGlvbiBvZiB0aGUgbWFjaGluZSBpcyAke0RJU1R9LiIgDQplY2hvICJEaXN0cmlidXRpb24gdHlwZSBvZiB0aGUgbWFjaGluZSBpcyAke0RJU1RfVFlQRX0uIg0KZWNobyAiUmV2aXNpb24gb2YgdGhlIGRpc3RybyBpcyAke1JFVn0uIg0KZWNobyAiS2VybmVsIHZlcnNpb24gb2YgdGhlIG1hY2hpbmUgaXMgJHtLRVJORUxfVkVSU0lPTn0uIg0KDQojIEluc3RhbGwgY3VybCBDb21tYW5kDQppZiBbICQoY29tbWFuZCAtdiBjdXJsKSBdOyB0aGVuDQogICAgZWNobyAiUHJlaW5zdGFsbGVkIGN1cmwgY29tbWFuZCAtIExpbnV4IGRpc3RyaWJ1dGlvbjogJHtESVNUfSBhbmQgZGlzdHJpYnV0aW9uIHJldmlzaW9uOiAke1JFVn0iDQplbHNlIA0KICAgIGlmIFsgJChjb21tYW5kIC12IHl1bSkgXTsgdGhlbg0KICAgICAgICAjIFBhY2thZ2UgSW5zdGFsbCBjdXJsIFRvb2xzIChBbWF6b24gTGludXgsIFJlZCBIYXQgRW50ZXJwcmlzZSBMaW51eCwgQ2VudE9TKQ0KICAgICAgICB5dW0gY2xlYW4gYWxsDQogICAgICAgIHl1bSBpbnN0YWxsIC15IGN1cmwNCiAgICBlbGlmIFsgJChjb21tYW5kIC12IGFwdC1nZXQpIF07IHRoZW4NCiAgICAgICAgIyBQYWNrYWdlIEluc3RhbGwgY3VybCBUb29scyAoRGViaWFuLCBVYnVudHUpDQogICAgICAgIGV4cG9ydCBERUJJQU5fRlJPTlRFTkQ9bm9uaW50ZXJhY3RpdmUNCiAgICAgICAgYXB0IGNsZWFuIC15DQogICAgICAgIGFwdCBpbnN0YWxsIC15IGN1cmwNCiAgICBlbGlmIFsgJChjb21tYW5kIC12IHp5cHBlcikgXTsgdGhlbg0KICAgICAgICAjIFBhY2thZ2UgSW5zdGFsbCBjdXJsIFRvb2xzIChTVVNFIExpbnV4IEVudGVycHJpc2UgU2VydmVyKQ0KICAgICAgICB6eXBwZXIgY2xlYW4gLS1hbGwNCiAgICAgICAgenlwcGVyIC0tcXVpZXQgLS1ub24taW50ZXJhY3RpdmUgaW5zdGFsbCBjdXJsDQogICAgZWxzZQ0KICAgICAgICBlY2hvICJVbnN1cHBvcnRlZCBjdXJsIGluc3RhbGwgLSBMaW51eCBkaXN0cmlidXRpb246ICR7RElTVH0gYW5kIGRpc3RyaWJ1dGlvbiByZXZpc2lvbjogJHtSRVZ9Ig0KICAgIGZpDQpmaQ0KDQojIFZhcmlhYmxlIGRlZmluaXRpb24NCnJlYWRvbmx5IElERU5USVRZX1VSTD0iaHR0cDovLzE2OS4yNTQuMTY5LjI1NC8yMDE2LTA2LTMwL2R5bmFtaWMvaW5zdGFuY2UtaWRlbnRpdHkvZG9jdW1lbnQvIg0KcmVhZG9ubHkgVFJVRV9SRUdJT049JChnZXRfY29udGVudHMgIiRJREVOVElUWV9VUkwiIHwgYXdrIC1GXCIgJy9yZWdpb24vIHsgcHJpbnQgJDQgfScpDQpyZWFkb25seSBERUZBVUxUX1JFR0lPTj0idXMtZWFzdC0xIg0KcmVhZG9ubHkgUkVHSU9OPSIke1RSVUVfUkVHSU9OOi0kREVGQVVMVF9SRUdJT059Ig0KDQpyZWFkb25seSBTQ1JJUFRfTkFNRT0iYXdzLWluc3RhbGwtc3NtLWFnZW50Ig0KcmVhZG9ubHkgU0NSSVBUX1VSTD0iaHR0cHM6Ly9hd3Mtc3NtLWRvd25sb2Fkcy0kUkVHSU9OLnMzLmFtYXpvbmF3cy5jb20vc2NyaXB0cy8kU0NSSVBUX05BTUUiDQoNCiMgY2FsbCB0aGUgU1NNIEFnZW50IEluc3RhbGxlciBzY3JpcHQgZnVuY3Rpb24NCmluc3RhbGxfc3NtX2FnZW50DQoNCmV4aXQgMA0K
@@ -52,29 +52,29 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: DescribeManagedInstanceForInstanceId
     action: "aws:executeAwsApi"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: InstanceId
         Selector: "$.InstanceInformationList[0].InstanceId"
   - name: DescribeManagedInstanceForPlatformType
@@ -82,14 +82,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformType
         Selector: "$.InstanceInformationList[0].PlatformType"
   - name: DescribeManagedInstanceForPlatformName
@@ -97,14 +97,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformName
         Selector: "$.InstanceInformationList[0].PlatformName"
   - name: DescribeManagedInstanceForPlatformVersion
@@ -112,14 +112,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformVersion
         Selector: "$.InstanceInformationList[0].PlatformVersion"
   - name: GetLinuxKernelInformationBeforeUpdate
@@ -127,12 +127,12 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -141,19 +141,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PreUpdateScript }}"
   - name: StopInstanceforKernelUpdate
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: stopped
   - name: StartInstanceforKernelUpdate
@@ -161,8 +161,8 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: running
   - name: WaitUntilSsmAgentIsOnline
@@ -170,27 +170,27 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: GetLinuxKernelInformationAfterUpdate
     action: "aws:runCommand"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -199,19 +199,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PostUpdateScript }}"
   - name: StopInstanceforCreateImage
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 3600
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       CheckStateOnly: false
       DesiredState: stopped
@@ -219,7 +219,7 @@ mainSteps:
     action: "aws:createImage"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       InstanceId: "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       ImageName: "{{ TargetAmiName }}"
       NoReboot: true
@@ -228,9 +228,9 @@ mainSteps:
     action: "aws:changeInstanceState"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: terminated
-outputs: 
+outputs:
   - "CreateImage.ImageId"

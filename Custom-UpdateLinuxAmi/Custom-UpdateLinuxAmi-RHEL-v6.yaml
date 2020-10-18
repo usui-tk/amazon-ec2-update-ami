@@ -1,57 +1,57 @@
 schemaVersion: "0.3"
 description: "Updates AMI with Linux distribution packages and Amazon software. For details,see https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-awsdocs-linux.html"
 assumeRole: "{{AutomationAssumeRole}}"
-parameters: 
-  SourceAmiId: 
+parameters:
+  SourceAmiId:
     type: String
     description: "(Required) The source Amazon Machine Image ID."
-  SubnetId: 
+  SubnetId:
     type: String
     description: "(Required) Specify the SubnetId if you want to launch EC2 instance in a specific subnet."
     default: ""
-  IamInstanceProfileName: 
+  IamInstanceProfileName:
     type: String
     description: "(Required) The instance profile that enables Systems Manager (SSM) to manage the instance."
     default: ManagedInstanceProfile
-  AutomationAssumeRole: 
+  AutomationAssumeRole:
     type: String
     description: "(Required) The ARN of the role that allows Automation to perform the actions on your behalf."
     default: "arn:aws:iam::{{global:ACCOUNT_ID}}:role/AutomationServiceRole"
-  TargetAmiName: 
+  TargetAmiName:
     type: String
     description: "(Optional) The name of the new AMI that will be created. Default is a system-generated string including the source AMI id, and the creation time and date."
     default: "UpdateLinuxAmi_from_{{SourceAmiId}}_on_{{global:DATE_TIME}}"
-  InstanceType: 
+  InstanceType:
     type: String
     description: "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is c4.xlarge."
     default: "c4.xlarge"
-  InstanceTypeForEnaSupport: 
+  InstanceTypeForEnaSupport:
     type: String
     description: "(Optional) Type of instance to launch as the workspace host. Instance types vary by region. Default is r4.xlarge."
     default: "r4.xlarge"
-  PreUpdateScript: 
+  PreUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute prior to installing OS updates."
     default: ""
-  PostUpdateScript: 
+  PostUpdateScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute after installing OS updates."
     default: ""
-  EnaScript: 
+  EnaScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute prior to installing Linux Kernel module (ena)."
     default: ""
-  IxgbevfScript: 
+  IxgbevfScript:
     type: String
     description: "(Optional) A script provided as a string. It will execute prior to installing Linux Kernel module (ixgbevf)."
     default: ""
-mainSteps: 
+mainSteps:
   - name: LaunchInstance
     action: "aws:runInstances"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       ImageId: "{{ SourceAmiId }}"
       InstanceType: "{{ InstanceType }}"
       UserData: "IyEvYmluL2Jhc2gNCg0KZnVuY3Rpb24gZ2V0X2NvbnRlbnRzKCkgew0KICAgIGlmIFsgLXggIiQod2hpY2ggY3VybCkiIF07IHRoZW4NCiAgICAgICAgY3VybCAtcyAtZiAiJDEiDQogICAgZWxpZiBbIC14ICIkKHdoaWNoIHdnZXQpIiBdOyB0aGVuDQogICAgICAgIHdnZXQgIiQxIiAtTyAtDQogICAgZWxzZQ0KICAgICAgICBkaWUgIk5vIGRvd25sb2FkIHV0aWxpdHkgKGN1cmwsIHdnZXQpIg0KICAgIGZpDQp9DQoNCnJlYWRvbmx5IElERU5USVRZX1VSTD0iaHR0cDovLzE2OS4yNTQuMTY5LjI1NC8yMDE2LTA2LTMwL2R5bmFtaWMvaW5zdGFuY2UtaWRlbnRpdHkvZG9jdW1lbnQvIg0KcmVhZG9ubHkgVFJVRV9SRUdJT049JChnZXRfY29udGVudHMgIiRJREVOVElUWV9VUkwiIHwgYXdrIC1GXCIgJy9yZWdpb24vIHsgcHJpbnQgJDQgfScpDQpyZWFkb25seSBERUZBVUxUX1JFR0lPTj0idXMtZWFzdC0xIg0KcmVhZG9ubHkgUkVHSU9OPSIke1RSVUVfUkVHSU9OOi0kREVGQVVMVF9SRUdJT059Ig0KDQpyZWFkb25seSBTQ1JJUFRfTkFNRT0iYXdzLWluc3RhbGwtc3NtLWFnZW50Ig0KcmVhZG9ubHkgU0NSSVBUX1VSTD0iaHR0cHM6Ly9hd3Mtc3NtLWRvd25sb2Fkcy0kUkVHSU9OLnMzLmFtYXpvbmF3cy5jb20vc2NyaXB0cy8kU0NSSVBUX05BTUUiDQoNCmNkIC90bXANCkZJTEVfU0laRT0wDQpNQVhfUkVUUllfQ09VTlQ9Mw0KUkVUUllfQ09VTlQ9MA0KDQp3aGlsZSBbICRSRVRSWV9DT1VOVCAtbHQgJE1BWF9SRVRSWV9DT1VOVCBdIDsgZG8NCiAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IERvd25sb2FkaW5nIHNjcmlwdCBmcm9tICRTQ1JJUFRfVVJMDQogIGdldF9jb250ZW50cyAiJFNDUklQVF9VUkwiID4gIiRTQ1JJUFRfTkFNRSINCiAgRklMRV9TSVpFPSQoZHUgLWsgL3RtcC8kU0NSSVBUX05BTUUgfCBjdXQgLWYxKQ0KICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogRmluaXNoZWQgZG93bmxvYWRpbmcgc2NyaXB0LCBzaXplOiAkRklMRV9TSVpFDQogIGlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogICAgYnJlYWsNCiAgZWxzZQ0KICAgIGlmIFtbICRSRVRSWV9DT1VOVCAtbHQgTUFYX1JFVFJZX0NPVU5UIF1dOyB0aGVuDQogICAgICBSRVRSWV9DT1VOVD0kKChSRVRSWV9DT1VOVCsxKSk7DQogICAgICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogRmlsZVNpemUgaXMgMCwgcmV0cnlDb3VudDogJFJFVFJZX0NPVU5UDQogICAgZmkNCiAgZmkgDQpkb25lDQoNCmlmIFsgJEZJTEVfU0laRSAtZ3QgMCBdOyB0aGVuDQogIGNobW9kICt4ICIkU0NSSVBUX05BTUUiDQogIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBSdW5uaW5nIFVwZGF0ZVNTTUFnZW50IHNjcmlwdCBub3cgLi4uLg0KICAuLyIkU0NSSVBUX05BTUUiIC0tcmVnaW9uICIkUkVHSU9OIg0KZWxzZQ0KICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogVW5hYmxlIHRvIGRvd25sb2FkIHNjcmlwdCwgcXVpdHRpbmcgLi4uLg0KZmkNCg=="
@@ -64,29 +64,29 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: DescribeManagedInstanceForInstanceId
     action: "aws:executeAwsApi"
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: InstanceId
         Selector: "$.InstanceInformationList[0].InstanceId"
   - name: DescribeManagedInstanceForPlatformType
@@ -94,14 +94,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformType
         Selector: "$.InstanceInformationList[0].PlatformType"
   - name: DescribeManagedInstanceForPlatformName
@@ -109,14 +109,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformName
         Selector: "$.InstanceInformationList[0].PlatformName"
   - name: DescribeManagedInstanceForPlatformVersion
@@ -124,14 +124,14 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
-    outputs: 
+    outputs:
       - Name: PlatformVersion
         Selector: "$.InstanceInformationList[0].PlatformVersion"
   - name: GetLinuxKernelInformationBeforeUpdate
@@ -139,12 +139,12 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -153,19 +153,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 3600
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PreUpdateScript }}"
   - name: StopInstanceforKernelUpdate
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: stopped
   - name: StartInstanceforKernelUpdate
@@ -173,8 +173,8 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: running
   - name: WaitUntilSsmAgentIsOnline1
@@ -182,27 +182,27 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: GetLinuxKernelInformationAfterUpdate
     action: "aws:runCommand"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -211,12 +211,12 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -228,19 +228,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ IxgbevfScript }}"
   - name: StopInstanceforIxgbevfUpdate
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: stopped
   - name: CheckForSriovNetSupport
@@ -248,12 +248,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstanceAttribute
       Attribute: sriovNetSupport
       InstanceId: "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: StatusForSriovNetSupport
         Selector: "$.SriovNetSupport.Value"
         Type: String
@@ -262,7 +262,7 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: ModifyInstanceAttribute
       Attribute: sriovNetSupport
@@ -273,12 +273,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstanceAttribute
       Attribute: sriovNetSupport
       InstanceId: "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: StatusForSriovNetSupport
         Selector: "$.SriovNetSupport.Value"
         Type: String
@@ -287,8 +287,8 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: running
   - name: WaitUntilSsmAgentIsOnline2
@@ -296,27 +296,27 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: GetIxgbevfModuleInformationAfterInstall
     action: "aws:runCommand"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -328,12 +328,12 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -345,19 +345,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ EnaScript }}"
   - name: StopInstanceforEnaUpdate
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: stopped
   - name: CheckForEnaSupport
@@ -365,12 +365,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstances
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: StatusForEnaSupport
         Selector: "$.Reservations[0].Instances[0].EnaSupport"
         Type: Boolean
@@ -379,7 +379,7 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: ModifyInstanceAttribute
       Attribute: enaSupport
@@ -390,12 +390,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstances
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: StatusForEnaSupport
         Selector: "$.Reservations[0].Instances[0].EnaSupport"
         Type: Boolean
@@ -404,12 +404,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstances
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: InstanceType
         Selector: "$.Reservations[0].Instances[0].InstanceType"
         Type: String
@@ -418,7 +418,7 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: ModifyInstanceAttribute
       Attribute: instanceType
@@ -429,12 +429,12 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       Service: ec2
       Api: DescribeInstances
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-    outputs: 
+    outputs:
       - Name: InstanceType
         Selector: "$.Reservations[0].Instances[0].InstanceType"
         Type: String
@@ -443,8 +443,8 @@ mainSteps:
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: running
   - name: WaitUntilSsmAgentIsOnline3
@@ -452,27 +452,27 @@ mainSteps:
     timeoutSeconds: 1800
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       Service: ssm
       Api: DescribeInstanceInformation
-      InstanceInformationFilterList: 
+      InstanceInformationFilterList:
         - key: InstanceIds
-          valueSet: 
+          valueSet:
             - "{{ LaunchInstance.InstanceIds }}"
       PropertySelector: "$.InstanceInformationList[0].PingStatus"
-      DesiredValues: 
+      DesiredValues:
         - Online
   - name: GetEnaModuleInformationAfterInstall
     action: "aws:runCommand"
     maxAttempts: 3
     timeoutSeconds: 1200
     onFailure: Abort
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
-        commands: 
+      Parameters:
+        commands:
           - "#!/bin/bash"
           - ""
           - "uname -a"
@@ -484,19 +484,19 @@ mainSteps:
     maxAttempts: 3
     onFailure: Abort
     timeoutSeconds: 1800
-    inputs: 
+    inputs:
       DocumentName: "AWS-RunShellScript"
-      InstanceIds: 
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
-      Parameters: 
+      Parameters:
         commands: "{{ PostUpdateScript }}"
   - name: StopInstanceforCreateImage
     action: "aws:changeInstanceState"
     maxAttempts: 3
     timeoutSeconds: 3600
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       CheckStateOnly: false
       DesiredState: stopped
@@ -504,7 +504,7 @@ mainSteps:
     action: "aws:createImage"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
+    inputs:
       InstanceId: "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       ImageName: "{{ TargetAmiName }}"
       NoReboot: true
@@ -513,9 +513,9 @@ mainSteps:
     action: "aws:changeInstanceState"
     maxAttempts: 3
     onFailure: Abort
-    inputs: 
-      InstanceIds: 
+    inputs:
+      InstanceIds:
         - "{{ DescribeManagedInstanceForInstanceId.InstanceId }}"
       DesiredState: terminated
-outputs: 
+outputs:
   - "CreateImage.ImageId"
