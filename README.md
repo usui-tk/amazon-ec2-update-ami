@@ -7,6 +7,7 @@ Automatically update the AMI using AWS Systems Manager's Automation Document
 
 ## ListDocuments
 
+```
 AWS-ASGEnterStandby
 AWS-ASGExitStandby
 AWS-ApplyAnsiblePlaybooks
@@ -259,3 +260,4 @@ AmazonEFSUtils
 AmazonInspector-ManageAWSAgent
 AwsEnaNetworkDriver
 AwsVssComponents
+```
