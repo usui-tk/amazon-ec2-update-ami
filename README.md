@@ -5,8 +5,11 @@ Automatically update the AMI using AWS Systems Manager's Automation Document
 
 $ aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" --query "sort(DocumentIdentifiers[].Name)"
 
+
 --------------------------------------------------------------------------
 |                              ListDocuments                             |
+--------------------------------------------------------------------------
+
 +------------------------------------------------------------------------+
 |  AWS-ASGEnterStandby                                                   |
 |  AWS-ASGExitStandby                                                    |
