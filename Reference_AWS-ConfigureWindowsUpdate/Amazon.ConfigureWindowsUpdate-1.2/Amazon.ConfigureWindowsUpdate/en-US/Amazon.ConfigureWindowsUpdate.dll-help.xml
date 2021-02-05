@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<helpItems schema="maml">
+  <!--Set-WindowsUpdate help document-->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10"
+                   xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10"
+                   xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10"
+                   >
+    <command:details>
+      <command:name>Set-WindowsUpdate</command:name>
+      <command:verb>Set</command:verb>
+      <command:noun>WindowsUpdate</command:noun>
+      <maml:description>
+        <maml:para>Set Windows update modifies the Windows update agent settings. This will change the update level for Windows update and set an install hour and day if the update level is set to install updates automatically.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>
+        Set-WindowsUpdate configures the Windows update agent to never check for updates, check for updates, downlaod updates, or install update automatically for Windows updates. If install updates automatically is selected and scheduled install time and day is not specified, then it will default to every Sunday at 03:00:00. If an update requires a reboot, the computer will reboot automatically 15 minutes after the updates have been installed.
+      </maml:para>
+      <maml:para>
+        On Windows server 2012/2012 R2, it enables a local machine group policy object that configures the Windows update agent. The policies it enables are "Configure Automatic Updates" and "Always automatically restart at the scheduled time." If never check for updates is set for the update level, it will remove the group policies it enabled and use the Windows update APIs to disable Windows update.
+      </maml:para>
+      <maml:para>
+        On Windows server 2008/2008 R2, it uses the Windows update agent APIs to configure the update level. If install updates automatically is selected, it will set the scheduled install hour and day using the Windows update APIs.
+      </maml:para>
+    </maml:description>
+    <command:syntax>
+      <!--Parameter set-->
+      <command:syntaxItem>
+        <maml:name>Set-WindowsUpdate</maml:name>
+        <command:parameter required="true" globbing="false" position="0">
+          <maml:name>UpdateLevel</maml:name>
+          <command:parameterValue required="true">
+            UpdateLevels
+          </command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" globbing="false" position="1">
+          <maml:name>ScheduledInstallDay</maml:name>
+          <command:parameterValue required="true">
+            ScheduledInstallDayOptions
+          </command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" globbing="false" position="2">
+          <maml:name>ScheduledInstallTime</maml:name>
+          <command:parameterValue required="true">
+            int
+          </command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" globbing="false" position="0">
+        <maml:name>UpdateLevel</maml:name>
+        <maml:description>
+          <maml:para>The update level to set Windows update.</maml:para>
+          <maml:para>Options: NeverCheckForUpdates, CheckForUpdates, DownloadUpdates, InstallUpdatesAutomatically</maml:para>
+        </maml:description>
+      </command:parameter>
+      <command:parameter required="false" globbing="false" position="1">
+        <maml:name>ScheduledInstallDay</maml:name>
+        <maml:description>
+          <maml:para>Daily or the day of the week to download and install Windows updates. If not specified, it will default to Sunday.</maml:para>
+          <maml:para>Options: Daily, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, or Saturday</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">
+          ScheduledInstallDayOptions
+        </command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" globbing="false" position="2">
+        <maml:name>ScheduledInstallTime</maml:name>
+        <maml:description>
+          <maml:para>The time to download and install Windows updates. If not specified, it will default to a value of 3 which is 03:00:00. Valid values are 0 to 23.</maml:para>
+          <maml:para>A value of 0 will download and install Windows updates at 00:00:00 (12:00:00 AM).</maml:para>
+          <maml:para>A value of 8 will download and install Windows updates at 08:00:00 (08:00:00 AM).</maml:para>
+          <maml:para>A value of 16 will download and install Windows updates at 16:00:00 (4:00:00 PM).</maml:para>
+          <maml:para>A value of 23 will download and install Windows updates at 23:00:00 (11:00:00 PM).</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">
+            int32 
+        </command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <!--No input types-->
+    </command:inputTypes>
+    <command:returnValues>
+      <!--No return values-->
+    </command:returnValues>
+    <maml:alertSet>
+      <!--No Note information-->
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 1  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel InstallUpdatesAutomatically</dev:code>
+        <dev:remarks>
+          <maml:para>This uses the default day and time to install updates automatically. Thus, enables Windows automatic update to run every Sunday at 03:00:00 (03:00:00 AM).</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 2  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel InstallUpdatesAutomatically -ScheduledInstallDay Daily -ScheduledInstallTime 10</dev:code>
+        <dev:remarks>
+          <maml:para>This enables Windows automatic update to run daily at 10:00:00 (10:00:00 AM).</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 3  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel InstallUpdatesAutomatically -ScheduledInstallDay Monday -ScheduledInstallTime 14</dev:code>
+        <dev:remarks>
+          <maml:para>This enables Windows automatic update to run every Monday at 14:00:00 (2:00:00 PM).</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 4  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel DownloadUpdates</dev:code>
+        <dev:remarks>
+          <maml:para>This sets Windows update to check and download Windows updates but let you chose to install them. Downloads of update will occur in the background.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 5  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel CheckForUpdates</dev:code>
+        <dev:remarks>
+          <maml:para>This sets Windows update to check for updates but let you chose to download or install them.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--------------------  EXAMPLE 6  --------------------</maml:title>
+        <maml:Introduction>
+          <maml:para></maml:para>
+        </maml:Introduction>
+        <dev:code>PS C:\&gt; Set-WindowsUpdate -UpdateLevel NeverCheckForUpdates</dev:code>
+        <dev:remarks>
+          <maml:para>This sets Windows update to NEVER check, download, install Windows updates.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <maml:relatedLinks>
+    </maml:relatedLinks>
+  </command:command>
+</helpItems>

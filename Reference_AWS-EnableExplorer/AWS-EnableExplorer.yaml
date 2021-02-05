@@ -1,0 +1,221 @@
+#
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+---
+description: |
+  ### Document name - AWS-EnableExplorer
+
+  ## What does this document do?
+  This document enables the Systems Manager Explorer feature.
+
+  ## Input Parameters
+  * AutomationAssumeRole: The ARN of the role that allows Systems Manager Automation to perform actions on your behalf.
+
+  ## Output Paramaters
+  None
+schemaVersion: "0.3"
+assumeRole: "{{AutomationAssumeRole}}"
+parameters:
+  AutomationAssumeRole:
+    type: String
+    description: (Required) The ARN of the role that allows Systems Manager Automation to perform actions on your behalf.
+mainSteps:
+  - name: enableExplorer
+    action: aws:executeScript
+    description: |
+      ## What does the step do?
+      This step enables the Systems Manager Explorer feature. It creates the Systems Manager service-linked role, enables all OpsData sources, and sets the ExplorerOnboarded service setting. You can learn more about the Systems Manager Explorer feature and OpsData sources in the Systems Manager Explorer documentation.
+    inputs:
+      Runtime: python3.6
+      Handler: enable_explorer_handler
+      Script: |
+        import boto3
+        import time
+        import random
+        from botocore.exceptions import ClientError
+        from functools import partial, wraps
+
+        import os
+        region = os.environ['AWS_REGION']
+
+        SUPPORTED_OPSDATA_SOURCES = [
+            "ssm-patchmanager",
+            "EC2",
+            "ConfigCompliance",
+            "Association",
+            "OpsData-TrustedAdvisor",
+            "ComputeOptimizer",
+            "SupportCenterCase"
+        ]
+
+        SERVICE_SETTINGS = {
+            'ssm-patchmanager': '/ssm/opsitem/ssm-patchmanager',
+            'EC2': '/ssm/opsitem/EC2',
+            'ConfigCompliance': '/ssm/opsdata/ConfigCompliance',
+            'Association': '/ssm/opsdata/Association',
+            'OpsData-TrustedAdvisor': '/ssm/opsdata/OpsData-TrustedAdvisor',
+            'ComputeOptimizer': '/ssm/opsdata/ComputeOptimizer',
+            'SupportCenterCase': '/ssm/opsdata/SupportCenterCase'
+        }
+
+        RESOURCE_TYPE_EC2_INSTANCE = 'ResourceTypeEC2Instance'
+
+
+        def enable_explorer_handler(event, context):
+            opsdata_sources = set(SUPPORTED_OPSDATA_SOURCES)
+
+            # Ignore unsupported OpsData sources
+            if not has_ec2_recording_enabled():
+                opsdata_sources.discard('EC2')
+                opsdata_sources.discard('ConfigCompliance')
+            if not has_premium_support_plan_enabled():
+                opsdata_sources.discard('SupportCenterCase')
+                opsdata_sources.discard('OpsData-TrustedAdvisor')
+            if not should_enable_compute_optimizer():
+                opsdata_sources.discard('ComputeOptimizer')
+
+            iam_client = boto3.client("iam")
+            if not has_ssm_slr(iam_client):
+                print('The service linked role for ssm.amazonaws.com does not exist in target account.',
+                    'Attempting to create service linked role')
+                create_ssm_slr(iam_client)
+
+            ssm_client = boto3.client("ssm", region_name=region)
+            for opsdata_source in opsdata_sources:
+                update_service_setting(
+                    ssm_client, SERVICE_SETTINGS[opsdata_source], 'Enabled')
+            update_service_setting(
+                ssm_client, '/ssm/opsdata/ExplorerOnboarded', 'true')
+
+
+        def back_off_retry(retryable_api_call=None, api_name=''):
+
+            if retryable_api_call is None:
+                return partial(back_off_retry, api_name=api_name)
+
+            @wraps(retryable_api_call)
+            def retry(*args, **kwargs):
+                max_retry_times = 5
+                current_retry = 0
+                ssm_client = boto3.client("ssm", region_name=region)
+                # Adding jitter to avoid high volume of API call simultaneously
+                jitter = random.random()
+                time.sleep(jitter)
+                retry_interval_time = 0
+                exception = None
+                while current_retry < max_retry_times:
+                    try:
+                        return retryable_api_call(*args, **kwargs)
+                    except (ssm_client.exceptions.InternalServerError, ssm_client.exceptions.TooManyUpdates) as e:
+                        print('Encountered recoverable Exception {0} when invoking API {1}.'.format(e, api_name),
+                            'Prepare to retry {0} times'.format(current_retry))
+                        exception = e
+                        retry_interval_time = calculate_sleep_interval(current_retry)
+                    except ClientError as e:
+                        if e.response['Error']['Code'] not in ['InternalFailure', 'ServiceUnavailable']:
+                            raise Exception(
+                                "Exception %s occurs when invoking API %s" % (e, api_name))
+                        exception = e
+                        retry_interval_time = calculate_sleep_interval(current_retry)
+                    finally:
+                        current_retry = current_retry + 1
+                        time.sleep(retry_interval_time)
+                raise Exception(
+                    'The following Exception persists after reaching maximum retry limit: %s' % (exception))
+            return retry
+
+
+        def calculate_sleep_interval(current_retry):
+            return 2 ** current_retry + random.random()
+
+
+        @back_off_retry(api_name='ListRoles')
+        def has_ssm_slr(iam_client):
+            response = iam_client.list_roles(
+                PathPrefix='/aws-service-role/ssm.amazonaws.com/')
+            return len(response.get('Roles', [])) > 0
+
+
+        @back_off_retry(api_name='CreateServiceLinkedRole')
+        def create_ssm_slr(iam_client):
+            iam_client.create_service_linked_role(AWSServiceName="ssm.amazonaws.com")
+
+
+        @back_off_retry(api_name='UpdateServiceSetting')
+        def update_service_setting(ssm_client, setting_id, setting_value):
+            get_service_setting_response = ssm_client.get_service_setting(
+                SettingId=setting_id)
+            # Only Enable Data Source if customer not intentionally disable the sources
+            if get_service_setting_response['ServiceSetting']['Status'] == 'Default':
+                ssm_client.update_service_setting(
+                    SettingId=setting_id, SettingValue=setting_value)
+
+
+        @back_off_retry(api_name='DescribeConfigurationRecorders')
+        def has_ec2_recording_enabled():
+            config_client = boto3.client("config", region_name=region)
+            response = config_client.describe_configuration_recorders()
+            if len(response.get('ConfigurationRecorders', [])) > 0:
+                for configuration_recorder in response['ConfigurationRecorders']:
+                    record_group = configuration_recorder.get('recordingGroup')
+                    if (record_group and
+                            record_group.get('allSupported')):
+                        return True
+                    resource_types = record_group.get('resourceTypes')
+                    if (resource_types and
+                            RESOURCE_TYPE_EC2_INSTANCE in resource_types):
+                        return True
+            return False
+
+
+        @back_off_retry(api_name='DescribeTrustedAdvisorCheck')
+        def has_premium_support_plan_enabled():
+            support_client = boto3.client('support', region_name='us-east-1')
+            try:
+                support_client.describe_trusted_advisor_checks(language='en')
+                return True
+            except Exception as e:
+                print(
+                    'Trusted Advisor Data source is not enabled due to {0}'.format(e))
+                return False
+
+
+        @back_off_retry(api_name='GetEnrollmentStatus')
+        def should_enable_compute_optimizer():
+            support_regions = [
+                'us-east-2',
+                'us-east-1',
+                'us-west-1',
+                'us-west-2',
+                'ap-south-1',
+                'ap-northeast-2',
+                'ap-southeast-1',
+                'ap-southeast-2',
+                'ap-northeast-1',
+                'ca-central-1',
+                'eu-central-1',
+                'eu-west-1',
+                'eu-west-2',
+                'eu-west-3',
+                'eu-north-1',
+                'sa-east-1'
+            ]
+            client = boto3.client('compute-optimizer', region_name=region)
+            if client.meta.region_name in support_regions:
+                response = client.get_enrollment_status()
+                if response.get('status', '') == 'Active':
+                    return True
+            return False

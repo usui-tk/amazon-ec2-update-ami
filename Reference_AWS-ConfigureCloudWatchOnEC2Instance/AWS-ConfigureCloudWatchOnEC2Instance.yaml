@@ -1,0 +1,82 @@
+#
+# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+---
+description: |
+  ### Document name - AWS-ConfigureCloudWatchOnEC2Instance
+
+  ## What does this document do?
+  The AWS-ConfigureCloudWatchOnEC2Instance Automation document enables or disables CloudWatch monitoring on an EC2 instance.
+
+  ## Input Parameters
+  * InstanceId: (Required) The ID of the EC2 instance on which you want to enable CloudWatch monitoring.
+  * status: (Optional) Specifies whether to enable or disable CloudWatch.
+    * Allowed Values: Enabled | Disabled
+    * Default: Enabled
+  * properties: (Optional) This parameter is not supported. It is listed here for backwards compatibility.
+  * AutomationAssumeRole: (Optional) The Amazon Resource Name (ARN) of the role that allows SSM Automation to perform the actions on your behalf.
+
+  ## Output parameters
+  None
+schemaVersion: '0.3'
+assumeRole: "{{ AutomationAssumeRole }}"
+parameters:
+  InstanceId:
+    type: String
+    description: "(Required) The ID of the EC2 instance on which you want to enable CloudWatch monitoring."
+  status:
+    type: String
+    description: "(Optional) Specifies whether to enable or disable CloudWatch. Valid values: \"Enabled\" | \"Disabled\""
+    allowedValues:
+      - Enabled
+      - Disabled
+    default: "Enabled"
+  AutomationAssumeRole:
+    default: ""
+    type: String
+    description: "(Optional) The Amazon Resource Name (ARN) of the role that allows SSM Automation to perform the actions on your behalf."
+  properties:
+    type: String
+    description: "(Optional) This parameter is not supported. It is listed here for backwards compatibility."
+    default: ""
+mainSteps:
+  - name: configureCloudWatch
+    action: aws:executeScript
+    isEnd: true
+    description: |
+      ## configureCloudWatch
+      Configures Cloudwatch on the EC2 instance with the given status.
+      ## Inputs
+      * InstanceId: The ID of the EC2 instance on which you want to enable CloudWatch monitoring.
+      * status: Specifies whether to enable or disable CloudWatch.
+    inputs:
+      Runtime: python3.6
+      Handler: configurecloudwatch_handler
+      InputPayload:
+        InstanceId: "{{InstanceId}}"
+        status: "{{status}}"
+      Script: |-
+        import boto3
+
+        def configurecloudwatch_handler(event, context):
+          ec2_client = boto3.client('ec2')
+          instance_id = event["InstanceId"]
+          new_state = event["status"]
+
+          if new_state == "Enabled":
+            ec2_client.monitor_instances(InstanceIds=[instance_id])
+          elif new_state == "Disabled":
+            ec2_client.unmonitor_instances(InstanceIds=[instance_id])

@@ -1,0 +1,5 @@
+[Linux]
+https://aws-windows-downloads-ap-northeast-1.s3.amazonaws.com/STIG/LinuxAWSConfigureSTIG_1_4_1.tgz
+
+[Windows]
+https://aws-windows-downloads-ap-northeast-1.s3.amazonaws.com/STIG/AWSConfigureSTIG_1_2.zip
