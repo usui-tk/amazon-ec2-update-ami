@@ -1,8 +1,7 @@
 # amazon-ec2-update-ami
 Automatically update the AMI using AWS Systems Manager's Automation Document
 
-## Shared document information provided by AWS (2021/2/5)
-
+## Shared document information provided by AWS (2021/5/5)
 
 > aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" "Key=DocumentType,Values=Automation" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
 
@@ -17,8 +16,10 @@ Automatically update the AMI using AWS Systems Manager's Automation Document
 
 ### List-Documents (Automation)
 
-```
+> aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" "Key=DocumentType,Values=Automation" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
 
+
+```
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |                                                                                               ListDocuments                                                                                               |
 +--------+------------------------------------------------------------------------+---------------+---------+------------+------------+------------+---------+----------------------------------------------+
@@ -236,8 +237,157 @@ Automatically update the AMI using AWS Systems Manager's Automation Document
 |  2     |  AWSSQLServer-Index                                                    |  Automation   |  YAML   |  Windows   |  Linux     |  MacOS     |  0.3    |  /AWS::EC2::Instance                         |
 |  2     |  AWSSQLServer-Restore                                                  |  Automation   |  YAML   |  Windows   |  Linux     |  MacOS     |  0.3    |  /AWS::EC2::Instance                         |
 +--------+------------------------------------------------------------------------+---------------+---------+------------+------------+------------+---------+----------------------------------------------+
-
 ```
 
+
+### List-Documents (Command)
+
+> aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" "Key=DocumentType,Values=Command" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
+
+```
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                           ListDocuments                                                                           |
++--------+----------------------------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+| DocVer |                         DocumentName                           | DocumentType  | Format  | Platform1  | Platform2  | Platform3  | Schema  | TargetType   |
++--------+----------------------------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+|  1     |  AWS-ApplyAnsiblePlaybooks                                     |  Command      |  JSON   |  Linux     |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-ApplyChefRecipes                                          |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-ApplyDSCMofs                                              |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-ApplyPatchBaseline                                        |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-ConfigureAWSPackage                                       |  Command      |  JSON   |  Windows   |  Linux     |  MacOS     |  2.2    |  None        |
+|  1     |  AWS-ConfigureCloudWatch                                       |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-ConfigureDocker                                           |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-ConfigureKernelLivePatching                               |  Command      |  YAML   |  Linux     |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-ConfigureWindowsUpdate                                    |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-FindWindowsUpdates                                        |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-InstallApplication                                        |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-InstallMissingWindowsUpdates                              |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-InstallPowerShellModule                                   |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-InstallSpecificWindowsUpdates                             |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-InstallWindowsUpdates                                     |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWS-InstanceRebootWithHooks                                   |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-JoinDirectoryServiceDomain                                |  Command      |  JSON   |  Windows   |  Linux     |  None      |  1.2    |  None        |
+|  1     |  AWS-ListWindowsInventory                                      |  Command      |  JSON   |  Windows   |  Linux     |  None      |  1.2    |  None        |
+|  1     |  AWS-RefreshAssociation                                        |  Command      |  JSON   |  Windows   |  Linux     |  MacOS     |  2.0    |  None        |
+|  1     |  AWS-RunAnsiblePlaybook                                        |  Command      |  JSON   |  Linux     |  None      |  None      |  2.0    |  None        |
+|  1     |  AWS-RunDockerAction                                           |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.0    |  None        |
+|  1     |  AWS-RunDocument                                               |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-RunInspecChecks                                           |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-RunPatchBaseline                                          |  Command      |  JSON   |  Windows   |  Linux     |  MacOS     |  2.2    |  None        |
+|  1     |  AWS-RunPatchBaselineAssociation                               |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-RunPatchBaselineWithHooks                                 |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-RunPowerShellScript                                       |  Command      |  JSON   |  Windows   |  Linux     |  None      |  1.2    |  None        |
+|  1     |  AWS-RunRemoteScript                                           |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  1     |  AWS-RunSaltState                                              |  Command      |  JSON   |  Linux     |  None      |  None      |  2.0    |  None        |
+|  1     |  AWS-RunShellScript                                            |  Command      |  JSON   |  Linux     |  MacOS     |  None      |  1.2    |  None        |
+|  1     |  AWS-UpdateEC2Config                                           |  Command      |  JSON   |  Windows   |  None      |  None      |  1.2    |  None        |
+|  1     |  AWS-UpdateSSMAgent                                            |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  14    |  AmazonInspector-ManageAWSAgent                                |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  6     |  AmazonCloudWatch-ManageAgent                                  |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  2     |  AmazonCloudWatch-MigrateCloudWatchAgent                       |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  14    |  AWSSupport-RunEC2RescueForWindowsTool                         |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  6     |  AWSSAP-InstallBackint                                         |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  2     |  AWSEC2-ApplicationInsightsCloudwatchAgentInstallAndConfigure  |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  2     |  AWSEC2-CheckPerformanceCounterSets                            |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  6     |  AWSEC2-ConfigureSTIG                                          |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  7     |  AWSEC2-CreateVssSnapshot                                      |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  2     |  AWSEC2-DetectWorkload                                         |  Command      |  JSON   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  7     |  AWSEC2-ManageVssIO                                            |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  7     |  AWSEC2-RunSysprep                                             |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  5     |  AWSEC2Launch-RunMigration                                     |  Command      |  JSON   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-AddUsersToGroups                              |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-CreateGroup                                   |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-CreateUser                                    |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  6     |  AWSFleetManager-CreateWindowsRegistryKey                      |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-DeleteGroup                                   |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-DeleteUser                                    |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  6     |  AWSFleetManager-DeleteWindowsRegistryKey                      |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  6     |  AWSFleetManager-DeleteWindowsRegistryValue                    |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  4     |  AWSFleetManager-GetFileSystemContent                          |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  10    |  AWSFleetManager-GetGroups                                     |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  4     |  AWSFleetManager-GetUsers                                      |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  6     |  AWSFleetManager-GetWindowsEvents                              |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWSFleetManager-GetWindowsRegistryContent                     |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  8     |  AWSFleetManager-RemoveUsersFromGroups                         |  Command      |  YAML   |  Windows   |  Linux     |  None      |  2.2    |  None        |
+|  6     |  AWSFleetManager-SetWindowsRegistryValue                       |  Command      |  YAML   |  Windows   |  None      |  None      |  2.2    |  None        |
+|  1     |  AWSFIS-Run-CPU-Stress                                         |  Command      |  YAML   |  Linux     |  None      |  None      |  2.2    |  None        |
+|  1     |  AWSFIS-Run-Kill-Process                                       |  Command      |  YAML   |  Linux     |  None      |  None      |  2.2    |  None        |
+|  2     |  AWSFIS-Run-Memory-Stress                                      |  Command      |  YAML   |  Linux     |  None      |  None      |  2.2    |  None        |
+|  2     |  AWSFIS-Run-Network-Latency                                    |  Command      |  YAML   |  Linux     |  None      |  None      |  2.2    |  None        |
++--------+----------------------------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+```
+
+
+
+### List-Documents (Session)
+
+> aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" "Key=DocumentType,Values=Session" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
+
+```
+-----------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                ListDocuments                                                                |
++--------+------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+| DocVer |              DocumentName                | DocumentType  | Format  | Platform1  | Platform2  | Platform3  | Schema  | TargetType   |
++--------+------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+|  1     |  AWS-PasswordReset                       |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  1     |  AWS-StartInteractiveCommand             |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  1     |  AWS-StartPortForwardingSession          |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  1     |  AWS-StartPortForwardingSessionToSocket  |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  1     |  AWS-StartSSHSession                     |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  8     |  AWSFleetManager-CreateUserInteractive   |  Session      |  YAML   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  3     |  AWSFleetManager-GetFileContent          |  Session      |  YAML   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  6     |  AWSFleetManager-GetPerformanceCounters  |  Session      |  YAML   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
+|  1     |  AmazonECS-ExecuteInteractiveCommand     |  Session      |  JSON   |  Windows   |  Linux     |  MacOS     |  1.0    |  None        |
++--------+------------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+```
+
+
+
+
+### List-Documents (Package:Amazon)
+
+> aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=Amazon" "Key=DocumentType,Values=Package" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
+
+```
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                             ListDocuments                                                                             |
++--------+-----------------------------------------------------------+---------------+---------+------------+------------+------------+---------+-----------------------+
+| DocVer |                       DocumentName                        | DocumentType  | Format  | Platform1  | Platform2  | Platform3  | Schema  |      TargetType       |
++--------+-----------------------------------------------------------+---------------+---------+------------+------------+------------+---------+-----------------------+
+|  30    |  AmazonCloudWatchAgent                                    |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  5     |  AWSSupport-EC2Rescue                                     |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  5     |  AWSSAP-Backint                                           |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  10    |  AWSEC2Launch-Agent                                       |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  6     |  AmazonEFSUtils                                           |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  4     |  AWSObservabilityExporter-JMXExporterInstallAndConfigure  |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  1     |  AWSDistroOTel-Collector                                  |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  1     |  AWSNitroEnclavesWindows                                  |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  6     |  AWSCodeDeployAgent                                       |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  /AWS::EC2::Instance  |
+|  7     |  AWSKinesisTap                                            |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  5     |  AwsVssComponents                                         |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  13    |  AWSPVDriver                                              |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  2     |  AWSNVMe                                                  |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  10    |  AwsEnaNetworkDriver                                      |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
+|  3     |  AWSSAPTools-DataProvider                                 |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None                 |
++--------+-----------------------------------------------------------+---------------+---------+------------+------------+------------+---------+-----------------------+
+```
+
+
+
+
+### List-Documents (Package:ThirdParty)
+
+> aws ssm list-documents --no-cli-pager --output table --filters "Key=Owner,Values=ThirdParty" "Key=DocumentType,Values=Package" --query 'DocumentIdentifiers[*].{DocumentName:Name, DocumentType:DocumentType,Platform1:PlatformTypes[0],Platform2:PlatformTypes[1],Platform3:PlatformTypes[2],Format:DocumentFormat,TargetType:TargetType,DocVer:DocumentVersion,Schema:SchemaVersion}'
+
+```
+---------------------------------------------------------------------------------------------------------------------------------------------
+|                                                               ListDocuments                                                               |
++--------+----------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+| DocVer |             DocumentName               | DocumentType  | Format  | Platform1  | Platform2  | Platform3  | Schema  | TargetType   |
++--------+----------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+|  3     |  TrendMicro-CloudOne-WorkloadSecurity  |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None        |
+|  3     |  DynatraceOneAgent                     |  Package      |  JSON   |  None      |  None      |  None      |  2.0    |  None        |
++--------+----------------------------------------+---------------+---------+------------+------------+------------+---------+--------------+
+```
 
 
