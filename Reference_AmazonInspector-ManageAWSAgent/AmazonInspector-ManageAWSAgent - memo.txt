@@ -1,0 +1,12 @@
+
+[AmazonInspector-ManageAWSAgent - Overview]
+aws ssm describe-document --no-cli-pager --output json --name "AmazonInspector-ManageAWSAgent"
+aws ssm get-document --no-cli-pager --output json --name "AmazonInspector-ManageAWSAgent"
+
+[AmazonInspector-ManageAWSAgent - SSM Document Contents (for Linux)]
+aws ssm get-document --name "AmazonInspector-ManageAWSAgent" --document-version '$LATEST' --no-cli-pager --output json  | jq -r '.Content' | jq -r '.mainSteps[0].inputs.runCommand' | jq -r .[]
+
+[AmazonInspector-ManageAWSAgent - SSM Document Contents (for Windows)]
+aws ssm get-document --name "AmazonInspector-ManageAWSAgent" --document-version '$LATEST' --no-cli-pager --output json  | jq -r '.Content' | jq -r '.mainSteps[1].inputs.runCommand' | jq -r .[]
+
+
